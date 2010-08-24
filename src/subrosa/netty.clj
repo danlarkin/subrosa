@@ -40,7 +40,8 @@
     (if (instance? clojure.contrib.condition.Condition (.getCause evt))
       (let [condition (meta (.getCause evt))]
         (send-to-client (.getChannel evt) (:code condition) (:msg condition)))
-      (do
+      (when (not (some #{(class (.getCause evt))}
+                       #{java.io.IOException}))
         (println up-or-down "ERROR")
         (.printStackTrace (.getCause evt)))))
   evt)
