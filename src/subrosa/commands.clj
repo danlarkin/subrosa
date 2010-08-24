@@ -6,9 +6,8 @@
 (defmulti dispatch-command (fn [cmd & _] cmd))
 
 (defn dispatch-message [message socket]
-  (let [[cmd args] (seq (.split message " " 2))
-        #_(rest (re-find #"^([A-Za-z]+) ?(.*)?" message))]
-    (dispatch-command cmd socket args)))
+  (let [[cmd args] (seq (.split message " " 2))]
+    (dispatch-command cmd socket (or args ""))))
 
 (defn fix-args
   [fn-tail]
@@ -31,24 +30,28 @@
   (not (re-find #"[^a-zA-Z0-9\-\[\]\'`^{}_]" nick)))
 
 (defcommand "NICK" [channel nick]
-  (if (valid-nick? nick)
-    (if (not (user-for-nick nick))
-      (dosync
-       (if-let [existing-nick (nick-for-channel channel)]
-         (let [existing-user (user-for-nick existing-nick)
-               client (format-client channel)]
-           (change-nickname! existing-nick nick)
-           (send-to-client* channel (format ":%s NICK :%s" client nick)))
-         (change-nickname! nil nick))
-       (add-user-for-nick! channel nick)
-       (maybe-add-authentication-step! channel "NICK")
-       (maybe-update-authentication! channel))
+  (if (not (.isEmpty nick))
+    (if (valid-nick? nick)
+      (if (not (user-for-nick nick))
+        (dosync
+         (if-let [existing-nick (nick-for-channel channel)]
+           (let [existing-user (user-for-nick existing-nick)
+                 client (format-client channel)]
+             (change-nickname! existing-nick nick)
+             (send-to-client* channel (format ":%s NICK :%s" client nick)))
+           (change-nickname! nil nick))
+         (add-user-for-nick! channel nick)
+         (maybe-add-authentication-step! channel "NICK")
+         (maybe-update-authentication! channel))
+        (raise {:type :client-error
+                :code 433
+                :msg ":Nickname is already in use"}))
       (raise {:type :client-error
-              :code 433
-              :msg ":Nickname is already in use"}))
+              :code 432
+              :msg ":Erroneous nickname"}))
     (raise {:type :client-error
-            :code 432
-            :msg ":Erroneous nickname"})))
+            :code 431
+            :msg ":No nickname given"})))
 
 (defcommand "USER" [channel parts]
   (dosync

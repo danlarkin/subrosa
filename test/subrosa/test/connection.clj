@@ -42,6 +42,8 @@
     (transmit s "NICK dan@")
     (transmit s "USER dan 0 * :Dan Larkin")
     (is (received? s #"Erroneous nickname"))
+    (transmit s "NICK")
+    (is (received? s #"No nickname given"))
     (transmit s "NICK dan")
     (is (received? s #"Welcome to the .* dan$"))))
 
