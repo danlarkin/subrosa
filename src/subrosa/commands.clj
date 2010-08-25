@@ -64,10 +64,14 @@
             :msg ":No nickname given"})))
 
 (defcommand* "USER" [channel parts]
-  (dosync
-   (update-user-for-nick! (nick-for-channel channel) parts)
-   (maybe-add-authentication-step! channel "USER")
-   (maybe-update-authentication! channel)))
+  (if (not (authenticated? channel))
+    (dosync
+     (update-user-for-nick! (nick-for-channel channel) parts)
+     (maybe-add-authentication-step! channel "USER")
+     (maybe-update-authentication! channel))
+    (raise {:type :client-error
+            :code 462
+            :msg ":Unauthorized command (already registered)"})))
 
 (defcommand "QUIT" [channel quit-msg]
   (-> channel

@@ -54,3 +54,11 @@
   ;; since the socket was closed client-side
   ;; TODO: add a check for that here
   )
+
+(deftest send-user-after-authenticated
+  (with-open [s (connect)]
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (is (received? s #"Welcome to the .* dan$"))
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (is (received? s #"Unauthorized command"))))
