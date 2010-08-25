@@ -10,15 +10,25 @@
     (dispatch-command cmd socket (or args ""))))
 
 (defn fix-args
-  [fn-tail]
+  [require-auth? fn-tail]
   (let [[f & r] fn-tail]
-    (if (vector? f)
-      (list* (vec (cons '_ f)) r)
-      (map fix-args fn-tail))))
+    `(~(vec (cons '_ f))
+      ~(if require-auth?
+         `(when (authenticated? ~(first f))
+            ~@r)
+         `(do ~@r)))))
 
-(defmacro defcommand [cmd & fn-tail]
+(defmacro defcommand*
+  "Define a command which can be called by unauthenticated users."
+  [cmd & fn-tail]
   `(.addMethod dispatch-command ~cmd
-               (fn ~@(fix-args fn-tail))))
+               (fn ~@(fix-args false fn-tail))))
+
+(defmacro defcommand
+  "Define a command which requires its user to be authenticated."
+  [cmd & fn-tail]
+  `(.addMethod dispatch-command ~cmd
+               (fn ~@(fix-args true fn-tail))))
 
 (defmethod dispatch-command :default [cmd channel args]
   (when (authenticated? channel)
@@ -29,7 +39,7 @@
 (defn valid-nick? [nick]
   (not (re-find #"[^a-zA-Z0-9\-\[\]\'`^{}_]" nick)))
 
-(defcommand "NICK" [channel nick]
+(defcommand* "NICK" [channel nick]
   (if (not (.isEmpty nick))
     (if (valid-nick? nick)
       (if (not (user-for-nick nick))
@@ -53,7 +63,7 @@
             :code 431
             :msg ":No nickname given"})))
 
-(defcommand "USER" [channel parts]
+(defcommand* "USER" [channel parts]
   (dosync
    (update-user-for-nick! (nick-for-channel channel) parts)
    (maybe-add-authentication-step! channel "USER")
