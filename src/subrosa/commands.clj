@@ -65,10 +65,15 @@
 
 (defcommand* "USER" [channel parts]
   (if (not (authenticated? channel))
-    (dosync
-     (update-user-for-nick! (nick-for-channel channel) parts)
-     (maybe-add-authentication-step! channel "USER")
-     (maybe-update-authentication! channel))
+    (let [parts (.split parts " " 4)]
+      (if (= 4 (count parts))
+        (dosync
+         (update-user-for-nick! (nick-for-channel channel) parts)
+         (maybe-add-authentication-step! channel "USER")
+         (maybe-update-authentication! channel))
+        (raise {:type :client-error
+                :code 461
+                :msg  "USER :Not enough parameters"})))
     (raise {:type :client-error
             :code 462
             :msg ":Unauthorized command (already registered)"})))

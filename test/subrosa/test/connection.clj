@@ -62,3 +62,13 @@
     (is (received? s #"Welcome to the .* dan$"))
     (transmit s "USER dan 0 * :Dan Larkin")
     (is (received? s #"Unauthorized command"))))
+
+(deftest user-with-wrong-args
+  (with-open [s (connect)]
+    (transmit s "NICK dan")
+    (transmit s "USER")
+    (is (received? s #"Not enough parameters"))
+    (transmit s "USER dan 0 :whoopsie!")
+    (is (received? s #"Not enough parameters"))
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (is (received? s #"Welcome to the .* dan$"))))
