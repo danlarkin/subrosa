@@ -47,6 +47,16 @@
     (transmit s "NICK dan")
     (is (received? s #"Welcome to the .* dan$"))))
 
+(deftest changing-nick
+  (with-open [s (connect)]
+    (transmit s "NICK dan")
+    (transmit s "USER danlarkin 0 * :Dan Larkin")
+    (is (received? s #"Welcome to the .* dan$"))
+    (transmit s "NICK foo")
+    (is (received? s #":dan!danlarkin@.* NICK :foo"))
+    (transmit s "NICK invalidnickname!!!")
+    (is (received? s #"Erroneous nickname"))))
+
 (deftest incomplete-registration
   (with-open [s (connect)]
     (transmit s "NICK dan")) ; incomplete registration

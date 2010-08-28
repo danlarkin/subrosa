@@ -67,14 +67,15 @@
     (commute +pending-connections+ dissoc channel)
     (send-welcome channel)))
 
-(defn update-user-for-nick! [nick user-info]
-  (commute +nicks+ assoc nick user-info))
+(defn update-user-for-nick! [nick [user-name mode _ real-name]]
+  (commute +nicks+ assoc nick {:user-name user-name
+                               :real-name real-name}))
 
 (defn format-client [channel]
   (let [nick (nick-for-channel channel)]
     (format "%s!%s@%s"
             nick
-            (user-for-nick nick)
+            (:user-name (user-for-nick nick))
             (-> channel
                 .getRemoteAddress
                 .getAddress
