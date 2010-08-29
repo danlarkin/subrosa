@@ -1,5 +1,6 @@
 (ns subrosa.commands
   (:use [subrosa.client]
+        [subrosa.utils :only [interleave-all]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
 
@@ -83,3 +84,26 @@
       (send-to-client* (format ":%s QUIT :Client Quit"
                                (format-client channel)))
       (.addListener (ChannelFutureListener/CLOSE))))
+
+(defcommand "JOIN" [channel args]
+  (let [[rooms keys extra-args] (.split args " ")]
+    (if (not extra-args)
+      (if (not (empty? rooms))
+        (let [rooms (.split rooms ",")
+              keys (.split (or keys "") ",")]
+          (dosync
+           (doseq [[room-name key] (partition-all 2 (interleave-all
+                                                     rooms keys))]
+             (add-nick-to-room! (nick-for-channel channel) room-name)
+             (send-to-client* channel (format ":%s JOIN %s"
+                                              (format-client channel)
+                                              room-name))
+             ;; send a JOIN message to all other users in this room
+             (dispatch-message (format "TOPIC %s" room-name) channel)
+             (dispatch-message (format "NAMES %s" room-name) channel))))
+        (raise {:type :client-error
+                :code 461
+                :msg "JOIN :Not enough parameters"}))
+      (raise {:type :client-error
+              :code 461
+              :msg "JOIN :Too many parameters"}))))

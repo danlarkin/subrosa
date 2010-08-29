@@ -1,5 +1,6 @@
 (ns subrosa.client
-  (:use [subrosa.server]))
+  (:use [subrosa.server]
+        [subrosa.utils :only [set-conj]]))
 
 (defn authenticated? [channel]
   (not (@+pending-connections+ channel)))
@@ -80,3 +81,6 @@
                 .getRemoteAddress
                 .getAddress
                 .getCanonicalHostName))))
+
+(defn add-nick-to-room! [nick room-name]
+  (commute +rooms+ update-in [room-name :nicks] set-conj nick))
