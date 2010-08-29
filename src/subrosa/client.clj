@@ -84,3 +84,15 @@
 
 (defn add-nick-to-room! [nick room-name]
   (commute +rooms+ update-in [room-name :nicks] set-conj nick))
+
+(defn topic-for-room [room-name]
+  (get-in @+rooms+ [room-name :topic]))
+
+(defn room-exists? [room-name]
+  ((set (keys @+rooms+)) room-name))
+
+(defn nicks-in-room [room-name]
+  (get-in @+rooms+ [room-name :nicks]))
+
+(defn all-nicks []
+  (keys @+nicks+))

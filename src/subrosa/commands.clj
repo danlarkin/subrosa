@@ -1,6 +1,7 @@
 (ns subrosa.commands
   (:use [subrosa.client]
         [subrosa.utils :only [interleave-all]]
+        [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
 
@@ -107,3 +108,25 @@
       (raise {:type :client-error
               :code 461
               :msg "JOIN :Too many parameters"}))))
+
+(defcommand "TOPIC" [channel room-name]
+  (if (not (empty? room-name))
+    (if (room-exists? room-name)
+      (if-let [topic (topic-for-room room-name)]
+        (send-to-client channel 332 (format "%s :%s" room-name topic))
+        (send-to-client channel 331 (format "%s :No topic is set" room-name)))
+      (raise {:type :client-error
+              :code 403
+              :msg (format "%s :No such channel" room-name)}))
+    (raise {:type :client-error
+            :code 461
+            :msg "TOPIC :Not enough parameters"})))
+
+(defcommand "NAMES" [channel room-name]
+  (when-let [names (if (empty? room-name)
+                     (seq (all-nicks))
+                     (seq (nicks-in-room room-name)))]
+    (send-to-client channel 353 (format "= %s :%s"
+                                        room-name
+                                        (join " " names))))
+  (send-to-client channel 366 (format "%s :End of NAMES list" room-name)))
