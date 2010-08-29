@@ -52,8 +52,8 @@
              (.getValue evt))
     (.add channel-group (.getChannel evt))
     (dosync
-     (add-channel! (.getChannel evt)))
-    (println "Connection Started.")))
+     (add-channel! (.getChannel evt))))
+  evt)
 
 (defn message-handler [evt]
   (dispatch-message (.getMessage evt) (.getChannel evt))
@@ -64,8 +64,8 @@
              (= (.getState evt) (ChannelState/CONNECTED))
              (not (.getValue evt)))
     (dosync
-     (remove-channel! (.getChannel evt)))
-    (println "Connection Terminated.")))
+     (remove-channel! (.getChannel evt))))
+  evt)
 
 (defn add-string-codec! [pipeline]
   (doto pipeline
