@@ -16,23 +16,32 @@
 (defn connect
   ([] (connect *host* *port*))
   ([host port]
-     (doto (java.net.Socket. host port)
-       (.setSoTimeout 1000))))
+     (let [s (doto (java.net.Socket. host port)
+               (.setSoTimeout 1000))]
+       {:socket s
+        :in (BufferedReader. (InputStreamReader. (.getInputStream s)))
+        :out (.getOutputStream s)})))
+
+(defmacro with-connection [s & body]
+  `(let [~s (connect)]
+     (try
+       ~@body
+       (finally
+        (.close (:socket ~s))))))
 
 (defn transmit [socket command]
-  (let [out (.getOutputStream socket)]
+  (let [out (:out socket)]
     (.write out (.getBytes (str command "\n")))
     (.flush out)))
 
 (defn expect
   ([socket pattern] (expect socket pattern (or *timeout* 0)))
   ([socket pattern timeout]
-     (.setSoTimeout socket timeout)
-     (let [in (BufferedReader.
-               (InputStreamReader.
-                (.getInputStream socket)))]
+     (.setSoTimeout (:socket socket) timeout)
+     (let [in (:in socket)]
        (loop [received []]
          (let [line (socket-read-line in)]
+           ; (println "RECEIVED:" line) ;; verbose mode
            (if (nil? line)
              (join "\n" received)
              (if (re-find pattern line)
