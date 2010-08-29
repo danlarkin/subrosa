@@ -7,9 +7,9 @@
 
 (defmulti dispatch-command (fn [cmd & _] cmd))
 
-(defn dispatch-message [message socket]
+(defn dispatch-message [message channel]
   (let [[cmd args] (seq (.split message " " 2))]
-    (dispatch-command cmd socket (or args ""))))
+    (dispatch-command cmd channel (or args ""))))
 
 (defn fix-args
   [require-auth? fn-tail]
