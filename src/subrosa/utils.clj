@@ -6,6 +6,3 @@
      (when (or s1 s2)
        (cons (first s1) (cons (first s2)
                               (interleave-all (rest s1) (rest s2))))))))
-
-(defn set-conj [coll x]
-  (conj (set coll) x))

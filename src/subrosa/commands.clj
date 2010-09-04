@@ -111,7 +111,7 @@
 
 (defcommand "TOPIC" [channel room-name]
   (if (not (empty? room-name))
-    (if (room-exists? room-name)
+    (if (room-for-name room-name)
       (if-let [topic (topic-for-room room-name)]
         (send-to-client channel 332 (format "%s :%s" room-name topic))
         (send-to-client channel 331 (format "%s :No topic is set" room-name)))

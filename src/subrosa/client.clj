@@ -1,35 +1,49 @@
 (ns subrosa.client
-  (:use [subrosa.server]
-        [subrosa.utils :only [set-conj]]))
+  (:use [clojure.contrib.datalog.database :only [add-tuple remove-tuple select]]
+        [subrosa.server]))
 
-(defn authenticated? [channel]
-  (not (@+pending-connections+ channel)))
-
-(defn add-channel! [channel]
-  (commute +pending-connections+ assoc channel #{}))
-
-(defn remove-channel! [channel]
-  (commute +nicks+ dissoc (@+channels+ channel))
-  (commute +channels+ dissoc channel)
-  (commute +pending-connections+ dissoc channel))
-
-(defn add-user-for-nick! [channel nick]
-  (commute +channels+ assoc channel nick))
+(defn user-for-channel [channel]
+  (first (select @db :user {:channel channel})))
 
 (defn nick-for-channel [channel]
-  (@+channels+ channel))
+  (-> channel user-for-channel :nick))
 
 (defn user-for-nick [nick]
-  (@+nicks+ nick))
+  (first (select @db :user {:nick nick})))
 
-(defn change-nickname! [old-nick new-nick]
-  (let [existing-user (user-for-nick old-nick)]
-    (commute +nicks+ dissoc old-nick)
-    (commute +nicks+ assoc new-nick existing-user)))
+(defn authenticated? [channel]
+  (-> channel user-for-channel :pending? nil?))
+
+(defn add-channel! [channel]
+  (alter db add-tuple :user
+         {:nick nil
+          :real-name nil
+          :user-name nil
+          :channel channel
+          :pending? #{}}))
+
+(defn remove-channel! [channel]
+  (let [user (user-for-channel channel)
+        user-in-rooms (select @db :user-in-room {:user-nick (:nick user)})]
+    (alter db remove-tuple :user user)
+    (doseq [uir user-in-rooms]
+      (alter db remove-tuple :user-in-room uir))))
+
+(defn add-user-for-nick! [channel nick]
+  (let [user (user-for-channel channel)]
+    (alter db remove-tuple :user user)
+    (alter db add-tuple :user (assoc user :nick nick))))
+
+(defn change-nickname! [existing-nick new-nick]
+  (let [existing-user (user-for-nick existing-nick)]
+    (alter db remove-tuple :user existing-user)
+    (alter db add-tuple :user (assoc existing-user :nick new-nick))))
 
 (defn maybe-add-authentication-step! [channel step]
   (when-not (authenticated? channel)
-    (commute +pending-connections+ update-in [channel] conj step)))
+    (let [user (user-for-channel channel)]
+      (alter db remove-tuple :user user)
+      (alter db add-tuple :user (update-in user [:pending?] conj step)))))
 
 (defn send-to-client* [channel msg]
   (when (.isWritable channel)
@@ -63,14 +77,19 @@
                           (:version +server+))))
 
 (defn maybe-update-authentication! [channel]
-  (when (and (not (authenticated? channel))
-             (= (@+pending-connections+ channel) #{"NICK" "USER"}))
-    (commute +pending-connections+ dissoc channel)
-    (send-welcome channel)))
+  (let [user (user-for-channel channel)]
+    (when (and (not (authenticated? channel))
+               (= (:pending? user) #{"NICK" "USER"}))
+      (alter db remove-tuple :user user)
+      (alter db add-tuple :user (assoc user :pending? nil))
+      (send-welcome channel))))
 
 (defn update-user-for-nick! [nick [user-name mode _ real-name]]
-  (commute +nicks+ assoc nick {:user-name user-name
-                               :real-name real-name}))
+  (let [user (user-for-nick nick)]
+    (alter db remove-tuple :user user)
+    (alter db add-tuple :user (assoc user
+                                :user-name user-name
+                                :real-name real-name))))
 
 (defn format-client [channel]
   (let [nick (nick-for-channel channel)]
@@ -82,17 +101,27 @@
                 .getAddress
                 .getCanonicalHostName))))
 
+(defn nick-in-room? [nick room-name]
+  (first (select @db :user-in-room {:user-nick nick
+                                    :room-name room-name})))
+(defn room-for-name [room-name]
+  (first (select @db :room {:name room-name})))
+
+(defn maybe-create-room! [room-name]
+  (when-not (room-for-name room-name)
+    (alter db add-tuple :room {:name room-name
+                               :topic nil})))
+
 (defn add-nick-to-room! [nick room-name]
-  (commute +rooms+ update-in [room-name :nicks] set-conj nick))
+  (when-not (nick-in-room? nick room-name)
+    (maybe-create-room! room-name)
+    (alter db add-tuple :user-in-room {:user-nick nick :room-name room-name})))
 
 (defn topic-for-room [room-name]
-  (get-in @+rooms+ [room-name :topic]))
-
-(defn room-exists? [room-name]
-  ((set (keys @+rooms+)) room-name))
+  (:topic (room-for-name room-name)))
 
 (defn nicks-in-room [room-name]
-  (get-in @+rooms+ [room-name :nicks]))
+  (map :user-nick (select @db :user-in-room {:room-name room-name})))
 
 (defn all-nicks []
-  (keys @+nicks+))
+  (remove nil? (map :nick (select @db :user nil))))
