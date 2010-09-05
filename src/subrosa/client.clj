@@ -1,9 +1,12 @@
 (ns subrosa.client
   (:use [clojure.contrib.datalog.database :only [add-tuple remove-tuple select]]
+        [clojure.contrib.condition :only [raise]]
         [subrosa.server]))
 
 (defn user-for-channel [channel]
-  (first (select @db :user {:channel channel})))
+  (if-let [user (first (select @db :user {:channel channel}))]
+    user
+    (raise {:type :client-disconnect})))
 
 (defn nick-for-channel [channel]
   (-> channel user-for-channel :nick))

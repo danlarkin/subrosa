@@ -39,9 +39,14 @@
   (when (instance? ExceptionEvent evt)
     (if (instance? clojure.contrib.condition.Condition (.getCause evt))
       (let [condition (meta (.getCause evt))]
-        (send-to-client (.getChannel evt) (:code condition) (:msg condition)))
+        (when (= :client-error (:type condition))
+          (send-to-client
+           (.getChannel evt) (:code condition) (:msg condition)))
+        (when (= :client-disconnect (:type condition))
+          (println "Tried to grab data about a client after disconnect.")))
       (when (not (some #{(class (.getCause evt))}
-                       #{java.io.IOException}))
+                       #{;java.io.IOException
+                         java.nio.channels.ClosedChannelException}))
         (println up-or-down "ERROR")
         (.printStackTrace (.getCause evt)))))
   evt)
