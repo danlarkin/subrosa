@@ -44,3 +44,14 @@
     (transmit s "NAMES #foo")
     (is (received? s #"353 dan = #foo :dan"))
     (is (received? s #"End of NAMES list"))))
+
+(deftest all-clients-receive-join
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (is (received? s1 #":dan2!dan@localhost JOIN #foo")))))

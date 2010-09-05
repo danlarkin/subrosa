@@ -128,3 +128,12 @@
 
 (defn all-nicks []
   (remove nil? (map :nick (select @db :user nil))))
+
+(defn channels-in-room [room-name]
+  (for [{:keys [user-nick]} (select @db :user-in-room
+                                    {:room-name room-name})]
+    (:channel (user-for-nick user-nick))))
+
+(defn send-to-room [room-name msg]
+  (doseq [chan (channels-in-room room-name)]
+    (send-to-client* chan msg)))

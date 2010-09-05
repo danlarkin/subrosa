@@ -94,10 +94,9 @@
            (doseq [[room-name key] (partition-all 2 (interleave-all
                                                      rooms keys))]
              (add-nick-to-room! (nick-for-channel channel) room-name)
-             (send-to-client* channel (format ":%s JOIN %s"
-                                              (format-client channel)
-                                              room-name))
-             ;; send a JOIN message to all other users in this room
+             (send-to-room room-name (format ":%s JOIN %s"
+                                             (format-client channel)
+                                             room-name))
              (dispatch-message (format "TOPIC %s" room-name) channel)
              (dispatch-message (format "NAMES %s" room-name) channel))))
         (raise {:type :client-error
