@@ -34,8 +34,8 @@
     (alter db remove-tuple :user user)
     (alter db add-tuple :user (assoc user :nick nick))))
 
-(defn change-nickname! [existing-nick new-nick]
-  (let [existing-user (user-for-nick existing-nick)]
+(defn change-nickname! [channel new-nick]
+  (let [existing-user (user-for-channel channel)]
     (alter db remove-tuple :user existing-user)
     (alter db add-tuple :user (assoc existing-user :nick new-nick))))
 

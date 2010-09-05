@@ -46,12 +46,10 @@
     (if (valid-nick? nick)
       (if (not (user-for-nick nick))
         (dosync
-         (if-let [existing-nick (nick-for-channel channel)]
-           (let [existing-user (user-for-nick existing-nick)
-                 client (format-client channel)]
-             (change-nickname! existing-nick nick)
-             (send-to-client* channel (format ":%s NICK :%s" client nick)))
-           (change-nickname! nil nick))
+         (when (authenticated? channel)
+           (send-to-client* channel (format ":%s NICK :%s"
+                                            (format-client channel) nick)))
+         (change-nickname! channel nick)
          (add-user-for-nick! channel nick)
          (maybe-add-authentication-step! channel "NICK")
          (maybe-update-authentication! channel))
