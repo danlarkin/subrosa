@@ -14,6 +14,9 @@
 (defn user-for-nick [nick]
   (first (select @db :user {:nick nick})))
 
+(defn channel-for-nick [nick]
+  (-> nick user-for-nick :channel))
+
 (defn authenticated? [channel]
   (-> channel user-for-channel :pending? nil?))
 
@@ -136,4 +139,9 @@
 
 (defn send-to-room [room-name msg]
   (doseq [chan (channels-in-room room-name)]
+    (send-to-client* chan msg)))
+
+(defn send-to-room-except [room-name msg channel]
+  (doseq [chan (channels-in-room room-name)
+          :when (not= chan channel)]
     (send-to-client* chan msg)))

@@ -127,3 +127,23 @@
                                         room-name
                                         (join " " names))))
   (send-to-client channel 366 (format "%s :End of NAMES list" room-name)))
+
+(defcommand "PRIVMSG" [channel args]
+  (let [[recipient received-msg] (.split args " " 2)
+        msg (format ":%s PRIVMSG %s %s"
+                    (format-client channel) recipient received-msg)]
+    (if (not (empty? recipient))
+      (if (not (nil? received-msg))
+        (if (room-for-name recipient)
+          (send-to-room-except recipient msg channel)
+          (if-let [channel (channel-for-nick recipient)]
+            (send-to-client* channel msg)
+            (raise {:type :client-error
+                    :code 401
+                    :msg (format "%s :No such nick/channel" recipient)})))
+        (raise {:type :client-error
+                :code 412
+                :msg ":No text to send"}))
+      (raise {:type :client-error
+              :code 411
+              :msg ":No recipient given (PRIVMSG)"}))))
