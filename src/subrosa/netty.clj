@@ -49,7 +49,7 @@
         (when (= :client-disconnect (:type condition))
           (println "Tried to grab data about a client after disconnect.")))
       (when (not (some #{(class (.getCause evt))}
-                       #{;java.io.IOException
+                       #{java.io.IOException
                          java.nio.channels.ClosedChannelException}))
         (println up-or-down "ERROR")
         (.printStackTrace (.getCause evt)))))
