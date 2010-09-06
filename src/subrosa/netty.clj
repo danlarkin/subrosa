@@ -105,12 +105,14 @@
       (.setOption "child.tcpNoDelay" true)
       (.setOption "child.keepAlive" true))
     {:start-fn (fn []
+                 (println "Starting Subrosa.")
                  (reset-all-state!)
                  (->> port
                       InetSocketAddress.
                       (.bind bootstrap)
                       (.add channel-group)))
      :stop-fn (fn []
+                (println "Shutting down Subrosa.")
                 (doseq [channel channel-group]
                   (send-to-client* channel "ERROR :Server going down"))
                 (-> channel-group .close .awaitUninterruptibly)
