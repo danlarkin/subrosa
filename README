@@ -1,0 +1,6 @@
+Subrosa is an IRC daemon written in Clojure.
+
+It's fully event-driven, backed by the Netty server framework.
+
+It's also nowhere near complete and totally unsuitable for anything
+other than hacking on.
