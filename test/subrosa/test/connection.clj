@@ -82,3 +82,12 @@
     (is (received? s #"Not enough parameters"))
     (transmit s "USER dan 0 * :Dan Larkin")
     (is (received? s #"Welcome to the .* dan$"))))
+
+(deftest ping-command
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "PING localhost")
+    (is (received? s #"PONG .* :localhost"))
+    (transmit s "PING")
+    (is (received? s #"No origin specified"))))

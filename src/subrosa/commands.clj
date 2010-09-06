@@ -149,3 +149,10 @@
       (raise {:type :client-error
               :code 411
               :msg ":No recipient given (PRIVMSG)"}))))
+
+(defcommand "PING" [channel server]
+  (if (not (empty? server))
+    (send-to-client* channel (format "PONG %s :%s" (hostname) server))
+    (raise {:type :client-error
+            :code 409
+            :msg ":No origin specified"})))
