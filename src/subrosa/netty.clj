@@ -15,6 +15,9 @@
             DelimiterBasedFrameDecoder]
            [org.jboss.netty.handler.codec.string StringDecoder StringEncoder]))
 
+;; Some code and a lot of inspiration for the layout of this namespace came from
+;; Zach Tellman's awesome aleph project: http://github.com/ztellman/aleph
+
 (defn event->address [event]
   (-> event
       .getChannel
