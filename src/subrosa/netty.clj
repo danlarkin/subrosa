@@ -1,6 +1,7 @@
 (ns subrosa.netty
   (:use [subrosa.server :only [+server+ reset-all-state!]]
-        [subrosa.client :only [add-channel! remove-channel! send-to-client]]
+        [subrosa.client :only [add-channel! remove-channel! send-to-client
+                               send-to-client*]]
         [subrosa.commands :only [dispatch-message]])
   (:import [java.net InetSocketAddress]
            [java.util.concurrent Executors]
@@ -110,5 +111,7 @@
                       (.bind bootstrap)
                       (.add channel-group)))
      :stop-fn (fn []
+                (doseq [channel channel-group]
+                  (send-to-client* channel "ERROR :Server going down"))
                 (-> channel-group .close .awaitUninterruptibly)
                 (.releaseExternalResources channel-factory))}))
