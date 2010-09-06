@@ -79,10 +79,12 @@
             :msg ":Unauthorized command (already registered)"})))
 
 (defcommand "QUIT" [channel quit-msg]
-  (-> channel
-      (send-to-client* (format ":%s QUIT :Client Quit"
-                               (format-client channel)))
-      (.addListener (ChannelFutureListener/CLOSE))))
+  (let [chan-future-agent (send-to-client* channel
+                                           (format ":%s QUIT :Client Quit"
+                                                   (format-client channel)))]
+    (await chan-future-agent)
+    (when-let [chan-future @chan-future-agent]
+      (.addListener chan-future (ChannelFutureListener/CLOSE)))))
 
 (defcommand "JOIN" [channel args]
   (let [[rooms keys extra-args] (.split args " ")]
