@@ -51,6 +51,9 @@
       (alter db remove-tuple :user user)
       (alter db add-tuple :user (update-in user [:pending?] conj step)))))
 
+(defn hostname []
+  (:host +server+))
+
 (defn send-to-client* [channel msg]
   (when (.isWritable channel)
     (send (agent nil)
@@ -58,7 +61,7 @@
 
 (defn send-to-client
   ([channel code msg]
-     (send-to-client channel code msg (:host +server+)))
+     (send-to-client channel code msg (hostname)))
   ([channel code msg from]
      (send-to-client*
       channel
@@ -73,13 +76,13 @@
   (send-to-client channel 2
                   (format
                    "Your host is %s, running version %s"
-                   (:host +server+)
+                   (hostname)
                    (:version +server+)))
   (send-to-client channel 3
                   (format "This server was created %s" (:started +server+)))
   (send-to-client channel 4
                   (format "%s %s mMvV bcdefFhiIklmnoPqstv"
-                          (:host +server+)
+                          (hostname)
                           (:version +server+))))
 
 (defn maybe-update-authentication! [channel]
