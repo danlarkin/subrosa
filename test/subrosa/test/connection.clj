@@ -1,9 +1,8 @@
 (ns subrosa.test.connection
   (:use [clojure.test]
-        [subrosa.test.expect :only [connect transmit with-connection]]
-        [subrosa.test.utils :only [run-test-server setup-bindings]]))
+        [subrosa.test.expect]))
 
-(use-fixtures :each setup-bindings run-test-server)
+(use-fixtures :each run-test-server)
 
 (deftest basic-connect
   (with-connection s

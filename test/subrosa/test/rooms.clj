@@ -1,10 +1,9 @@
 (ns subrosa.test.rooms
   (:use [clojure.test]
         [clojure.string :only [join]]
-        [subrosa.test.expect :only [connect transmit with-connection]]
-        [subrosa.test.utils :only [run-test-server setup-bindings]]))
+        [subrosa.test.expect]))
 
-(use-fixtures :each setup-bindings run-test-server)
+(use-fixtures :each run-test-server)
 
 (deftest basic-join
   (with-connection s

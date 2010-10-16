@@ -1,11 +1,21 @@
 (ns subrosa.test.expect
   (:use [clojure.test]
-        [clojure.string :only [join]])
+        [clojure.string :only [join]]
+        [subrosa.netty :only [create-server]])
   (:import [java.io BufferedReader InputStreamReader]))
 
-(def *timeout* 0)
-(def *host* nil)
-(def *port* nil)
+(def *timeout* 10000)
+(def *host* "localhost")
+(def *port* 6789)
+
+(defn run-test-server [f]
+  (let [server (create-server *port*)]
+    (try
+      (with-out-str ((:start-fn server)))
+      #_(Thread/sleep 500)
+      (f)
+      (with-out-str ((:stop-fn server)))
+      #_(Thread/sleep 2000))))
 
 (defn socket-read-line [in]
   (try
@@ -41,7 +51,7 @@
      (let [in (:in socket)]
        (loop [received []]
          (let [line (socket-read-line in)]
-           ; (println "RECEIVED:" line) ;; verbose mode
+                                        ; (println "RECEIVED:" line) ;; verbose mode
            (if (nil? line)
              (join "\n" received)
              (if (re-find pattern line)
