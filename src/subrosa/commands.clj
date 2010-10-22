@@ -156,3 +156,13 @@
     (raise {:type :client-error
             :code 409
             :msg ":No origin specified"})))
+
+(defcommand list [channel rooms]
+  (let [rooms (if (empty? rooms)
+                (all-rooms)
+                (.split rooms ","))]
+    (doseq [room rooms]
+      (send-to-client channel 322 (format "%s 0 :%s"
+                                          room
+                                          (or (topic-for-room room) ""))))
+    (send-to-client channel 323 ":End of LIST")))

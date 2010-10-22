@@ -54,3 +54,19 @@
       (transmit s2 "USER dan 0 * :Dan Larkin")
       (transmit s2 "JOIN #foo")
       (is (received? s1 #":dan2!dan@localhost JOIN #foo")))))
+
+(deftest list-rooms
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "LIST")
+    (is (received? s #"323 dan :End of LIST"))
+    (transmit s "JOIN #foo")
+    (transmit s "JOIN #foo2")
+    (transmit s "LIST")
+    (is (received? s #"322 dan #foo2 0 :$"))
+    (is (received? s #"322 dan #foo 0 :$"))
+    (is (received? s #"323 dan :End of LIST"))
+    (transmit s "LIST #foo")
+    (is (received? s #"322 dan #foo 0 :$"))
+    (is (received? s #"323 dan :End of LIST"))))
