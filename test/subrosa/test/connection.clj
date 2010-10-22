@@ -90,3 +90,9 @@
     (is (received? s #"PONG .* :localhost"))
     (transmit s "PING")
     (is (received? s #"No origin specified"))))
+
+(deftest case-insensitive-commands
+  (with-connection s
+    (transmit s "nick dan")
+    (transmit s "user dan 0 * :Dan Larkin")
+    (is (received? s #"Welcome to the .* dan$"))))

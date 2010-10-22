@@ -9,7 +9,7 @@
 
 (defn dispatch-message [message channel]
   (let [[cmd args] (seq (.split message " " 2))]
-    (dispatch-command cmd channel (or args ""))))
+    (dispatch-command (.toLowerCase cmd) channel (or args ""))))
 
 (defn fix-args
   [require-auth? fn-tail]
@@ -23,13 +23,13 @@
 (defmacro defcommand*
   "Define a command which can be called by unauthenticated users."
   [cmd & fn-tail]
-  `(.addMethod dispatch-command ~cmd
+  `(.addMethod dispatch-command ~(.toLowerCase (str cmd))
                (fn ~@(fix-args false fn-tail))))
 
 (defmacro defcommand
   "Define a command which requires its user to be authenticated."
   [cmd & fn-tail]
-  `(.addMethod dispatch-command ~cmd
+  `(.addMethod dispatch-command ~(.toLowerCase (str cmd))
                (fn ~@(fix-args true fn-tail))))
 
 (defmethod dispatch-command :default [cmd channel args]
@@ -41,7 +41,7 @@
 (defn valid-nick? [nick]
   (not (re-find #"[^a-zA-Z0-9\-\[\]\'`^{}_]" nick)))
 
-(defcommand* "NICK" [channel nick]
+(defcommand* nick [channel nick]
   (if (not (.isEmpty nick))
     (if (valid-nick? nick)
       (if (not (user-for-nick nick))
@@ -63,7 +63,7 @@
             :code 431
             :msg ":No nickname given"})))
 
-(defcommand* "USER" [channel parts]
+(defcommand* user [channel parts]
   (if (not (authenticated? channel))
     (let [parts (.split parts " " 4)]
       (if (= 4 (count parts))
@@ -78,7 +78,7 @@
             :code 462
             :msg ":Unauthorized command (already registered)"})))
 
-(defcommand "QUIT" [channel quit-msg]
+(defcommand quit [channel quit-msg]
   (let [chan-future-agent (send-to-client* channel
                                            (format ":%s QUIT :Client Quit"
                                                    (format-client channel)))]
@@ -86,7 +86,7 @@
     (when-let [chan-future @chan-future-agent]
       (.addListener chan-future (ChannelFutureListener/CLOSE)))))
 
-(defcommand "JOIN" [channel args]
+(defcommand join [channel args]
   (let [[rooms keys extra-args] (.split args " ")]
     (if (not extra-args)
       (if (not (empty? rooms))
@@ -108,7 +108,7 @@
               :code 461
               :msg "JOIN :Too many parameters"}))))
 
-(defcommand "TOPIC" [channel room-name]
+(defcommand topic [channel room-name]
   (if (not (empty? room-name))
     (if (room-for-name room-name)
       (if-let [topic (topic-for-room room-name)]
@@ -121,7 +121,7 @@
             :code 461
             :msg "TOPIC :Not enough parameters"})))
 
-(defcommand "NAMES" [channel room-name]
+(defcommand names [channel room-name]
   (when-let [names (if (empty? room-name)
                      (seq (all-nicks))
                      (seq (nicks-in-room room-name)))]
@@ -130,7 +130,7 @@
                                         (join " " names))))
   (send-to-client channel 366 (format "%s :End of NAMES list" room-name)))
 
-(defcommand "PRIVMSG" [channel args]
+(defcommand privmsg [channel args]
   (let [[recipient received-msg] (.split args " " 2)
         msg (format ":%s PRIVMSG %s %s"
                     (format-client channel) recipient received-msg)]
@@ -150,7 +150,7 @@
               :code 411
               :msg ":No recipient given (PRIVMSG)"}))))
 
-(defcommand "PING" [channel server]
+(defcommand ping [channel server]
   (if (not (empty? server))
     (send-to-client* channel (format "PONG %s :%s" (hostname) server))
     (raise {:type :client-error
