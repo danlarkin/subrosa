@@ -52,7 +52,7 @@
       (alter db add-tuple :user (update-in user [:pending?] conj step)))))
 
 (defn hostname []
-  (:host +server+))
+  (:host server))
 
 (defn send-to-client* [channel msg]
   (when (.isWritable channel)
@@ -77,13 +77,13 @@
                   (format
                    "Your host is %s, running version %s"
                    (hostname)
-                   (:version +server+)))
+                   (:version server)))
   (send-to-client channel 3
-                  (format "This server was created %s" (:started +server+)))
+                  (format "This server was created %s" (:started server)))
   (send-to-client channel 4
                   (format "%s %s mMvV bcdefFhiIklmnoPqstv"
                           (hostname)
-                          (:version +server+))))
+                          (:version server))))
 
 (defn maybe-update-authentication! [channel]
   (let [user (user-for-channel channel)]
