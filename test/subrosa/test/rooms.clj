@@ -29,7 +29,9 @@
     (is (received? s #":No such channel"))
     (transmit s "JOIN #foo")
     (transmit s "TOPIC #foo")
-    (is (received? s #"331 dan #foo :No topic is set"))))
+    (is (received? s #"331 dan #foo :No topic is set"))
+    (transmit s "TOPIC #foo :awesome topic")
+    (is (received? s #":dan!dan@.* TOPIC #foo :awesome topic"))))
 
 (deftest names-command
   (with-connection s
@@ -49,6 +51,7 @@
     (transmit s1 "NICK dan1")
     (transmit s1 "USER dan 0 * :Dan Larkin")
     (transmit s1 "JOIN #foo")
+    (Thread/sleep 1000) ; Give dan1 a chance to authenticate
     (with-connection s2
       (transmit s2 "NICK dan2")
       (transmit s2 "USER dan 0 * :Dan Larkin")

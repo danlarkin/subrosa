@@ -21,7 +21,7 @@
   (try
     (.readLine in)
     (catch java.net.SocketTimeoutException e
-      nil)))
+      :timeout)))
 
 (defn connect
   ([] (connect *host* *port*))
@@ -30,7 +30,8 @@
                (.setSoTimeout 1000))]
        {:socket s
         :in (BufferedReader. (InputStreamReader. (.getInputStream s)))
-        :out (.getOutputStream s)})))
+        :out (.getOutputStream s)
+        :received (atom [])})))
 
 (defmacro with-connection [s & body]
   `(let [~s (connect)]
@@ -44,19 +45,23 @@
     (.write out (.getBytes (str command "\n")))
     (.flush out)))
 
+(defn found? [pattern lines]
+  (some (partial re-find pattern) lines))
+
 (defn expect
   ([socket pattern] (expect socket pattern (or *timeout* 0)))
   ([socket pattern timeout]
      (.setSoTimeout (:socket socket) timeout)
      (let [in (:in socket)]
-       (loop [received []]
-         (let [line (socket-read-line in)]
-                                        ; (println "RECEIVED:" line) ;; verbose mode
-           (if (nil? line)
-             (join "\n" received)
-             (if (re-find pattern line)
-               true
-               (recur (conj received line)))))))))
+       (loop [line (socket-read-line in)]
+         (swap! (:received socket) conj (if (= :timeout line)
+                                          ""
+                                          line))
+         (if (found? pattern @(:received socket))
+           true
+           (if (= :timeout line)
+             (join "\n" @(:received socket))
+             (recur (socket-read-line in))))))))
 
 (defmethod assert-expr 'received? [msg form]
   (let [socket (nth form 1)

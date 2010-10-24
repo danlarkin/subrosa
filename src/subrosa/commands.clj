@@ -114,15 +114,32 @@
               :code 461
               :msg "JOIN :Too many parameters"}))))
 
-(defcommand topic [channel room-name]
-  (if (not (empty? room-name))
-    (if (room-for-name room-name)
-      (if-let [topic (topic-for-room room-name)]
-        (send-to-client channel 332 (format "%s :%s" room-name topic))
-        (send-to-client channel 331 (format "%s :No topic is set" room-name)))
-      (raise {:type :client-error
-              :code 403
-              :msg (format "%s :No such channel" room-name)}))
+(defn valid-topic? [topic]
+  (.startsWith topic ":"))
+
+(defcommand topic [channel room-name-and-topic]
+  (if (not (empty? room-name-and-topic))
+    (let [[room-name topic] (.split room-name-and-topic " " 2)]
+      (if (room-for-name room-name)
+        (if topic
+          (if (valid-topic? topic)
+            (dosync
+             (set-topic-for-room! room-name (subs topic 1))
+             (send-to-room room-name (format ":%s TOPIC %s :%s"
+                                             (format-client channel)
+                                             room-name
+                                             (subs topic 1))))
+            (raise {:type :client-error
+                    :code 461
+                    :msg (format "% :Not enough parameters")}))
+          (if-let [topic (topic-for-room room-name)]
+            (send-to-client channel 332
+                            (format "%s :%s" room-name topic))
+            (send-to-client channel 331
+                            (format "%s :No topic is set" room-name))))
+        (raise {:type :client-error
+                :code 403
+                :msg (format "%s :No such channel" room-name)})))
     (raise {:type :client-error
             :code 461
             :msg "TOPIC :Not enough parameters"})))

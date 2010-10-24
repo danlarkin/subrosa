@@ -8,7 +8,9 @@
   (with-connection s
     (transmit s "NICK dan")
     (transmit s "USER dan 0 * :Dan Larkin")
-    (is (received? s #"Welcome to the .* dan$")))
+    (is (received? s #"Welcome to the .* dan$"))))
+
+(deftest opposite-order-connect
   (with-connection s
     (transmit s "USER dan 0 * :Dan Larkin")
     (transmit s "NICK dan")
