@@ -19,6 +19,33 @@
     (is (received? s #"353 dan = #foo :dan"))
     (is (received? s #"End of NAMES list"))))
 
+(deftest part
+  (testing "a user"
+    (with-connection user
+      (transmit user "NICK don")
+      (transmit user "USER don 0 * :Don K. Bahls")
+      (transmit user "JOIN #foo")
+      (with-connection observer
+        (transmit observer "NICK x")
+        (transmit observer "USER x 0 * :USER X")
+        (transmit observer "JOIN #foo")
+        (transmit observer "JOIN #lolcats")
+        (testing "requesting to part"
+          (testing "should receive get an error"
+            (testing "if they don't provide a channel to part"
+              (transmit user "PART")
+              (is (received? user #"461 don :Not enough parameters")))
+            (testing "if the channel doesn't exist"
+              (transmit user "PART #bahls")
+              (is (received? user #"403 don :No such channel")))
+            (testing "if they aren't in the channel"
+              (transmit user "PART #lolcats")
+              (is (received? user #"442 don :You're not on that channel"))))
+          (transmit user "PART #foo")
+          (testing "should trigger a part message sent to the whole channel"
+            (doseq [x [user observer]]
+              (is (received? x #":don!don@localhost PART #foo :don")))))))))
+
 (deftest topic-command
   (with-connection s
     (transmit s "NICK dan")

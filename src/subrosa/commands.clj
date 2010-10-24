@@ -211,3 +211,27 @@
                                           room
                                           (or (topic-for-room room) ""))))
     (send-to-client channel 323 ":End of LIST")))
+
+(defcommand part [channel command]
+  (let [[rooms-string part-message] (.split command ":" 2)
+        rooms (.split rooms-string ",")
+        nick (nick-for-channel channel)]
+    (doseq [room rooms]
+      (if (not (empty? room))
+        (if (some #{room} (all-rooms))
+          (if (nick-in-room? nick room)
+            (dosync
+             (send-to-room room (format ":%s PART %s :%s"
+                                        (format-client channel)
+                                        room
+                                        (or part-message nick)))
+             (remove-nick-from-room! nick room))
+            (raise {:type :client-error
+                    :code 442
+                    :msg ":You're not on that channel"}))
+          (raise {:type :client-error
+                  :code 403
+                  :msg ":No such channel"}))
+        (raise {:type :client-error
+                :code 461
+                :msg ":Not enough parameters"})))))

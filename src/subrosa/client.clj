@@ -129,6 +129,9 @@
     (maybe-create-room! room-name)
     (alter db add-tuple :user-in-room {:user-nick nick :room-name room-name})))
 
+(defn remove-nick-from-room! [nick room-name]
+  (alter db remove-tuple :user-in-room {:user-nick nick :room-name room-name}))
+
 (defn topic-for-room [room-name]
   (:topic (room-for-name room-name)))
 
