@@ -53,7 +53,7 @@
       (transmit s2 "NICK dan2")
       (transmit s2 "USER dan 0 * :Dan Larkin")
       (transmit s2 "JOIN #foo")
-      (is (received? s1 #":dan2!dan@localhost JOIN #foo")))))
+      (is (received? s1 #":dan2!dan@.* JOIN #foo")))))
 
 (deftest list-rooms
   (with-connection s
