@@ -151,3 +151,9 @@
 
 (defn all-rooms []
   (map :name (select @db :room nil)))
+
+(defn set-topic-for-room! [room-name topic]
+  (let [room (room-for-name room-name)]
+    (alter db remove-tuple :room room)
+    (alter db add-tuple :room (assoc room
+                                :topic topic))))
