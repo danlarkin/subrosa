@@ -38,8 +38,14 @@
             :code 421
             :msg (format "%s :Unknown command" cmd)})))
 
+(defn valid-nick-character? [character]
+  (and (not (Character/isWhitespace character))
+       (not (Character/isISOControl character))
+       (not (Character/isSpaceChar character))
+       (not-any? #{character} [\@ \! \+ \: \$])))
+
 (defn valid-nick? [nick]
-  (not (re-find #"[^a-zA-Z0-9\-\[\]\'`^{}_]" nick)))
+  (every? valid-nick-character? nick))
 
 (defcommand* nick [channel nick]
   (if (not (.isEmpty nick))
