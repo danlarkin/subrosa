@@ -38,9 +38,10 @@
 
 (deftest invalid-nick
   (with-connection s
-    (transmit s "NICK dan@")
-    (transmit s "USER dan 0 * :Dan Larkin")
-    (is (received? s #"Erroneous nickname"))
+    (doseq [nick ["dan@" "dan!" "dan$"]]
+      (transmit s (format "NICK %s" nick))
+      (transmit s "USER dan 0 * :Dan Larkin")
+      (is (received? s #"Erroneous nickname")))
     (transmit s "NICK")
     (is (received? s #"No nickname given"))
     (transmit s "NICK dan")
@@ -48,13 +49,13 @@
 
 (deftest changing-nick
   (with-connection s
-    (transmit s "NICK dan")
+    (transmit s "NICK @dan")
     (transmit s "USER danlarkin 0 * :Dan Larkin")
-    (is (received? s #"Welcome to the .* dan$"))
+    (is (received? s #":Erroneous nickname"))
     (transmit s "NICK foo")
-    (is (received? s #":dan!danlarkin@.* NICK :foo"))
-    (transmit s "NICK invalidnickname!!!")
-    (is (received? s #"Erroneous nickname"))))
+    (is (received? s #"Welcome to the .* foo"))
+    (transmit s "NICK optimus′")
+    (is (received? s #":foo!danlarkin@localhost NICK :optimus′"))))
 
 (deftest incomplete-registration
   (with-connection s

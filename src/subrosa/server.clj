@@ -18,11 +18,11 @@
 
 (defonce db (ref (make-subrosa-db)))
 
-(defonce +server+ {:host (.getHostName (InetAddress/getLocalHost))
-                   :version "subrosa-1.0.0-SNAPSHOT"
-                   :started (Date.)})
+(defonce server {:host (.getHostName (InetAddress/getLocalHost))
+                 :version "subrosa-1.0.0-SNAPSHOT"
+                 :started (Date.)})
 
 (defn reset-all-state! []
   (dosync
-   (alter-var-root #'+server+ assoc :started (Date.))
+   (alter-var-root #'server assoc :started (Date.))
    (ref-set db (make-subrosa-db))))

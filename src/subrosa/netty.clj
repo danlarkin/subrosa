@@ -1,5 +1,5 @@
 (ns subrosa.netty
-  (:use [subrosa.server :only [+server+ reset-all-state!]]
+  (:use [subrosa.server :only [reset-all-state!]]
         [subrosa.client :only [add-channel! remove-channel! send-to-client
                                send-to-client*]]
         [subrosa.commands :only [dispatch-message]])
