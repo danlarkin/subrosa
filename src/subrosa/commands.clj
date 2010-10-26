@@ -181,11 +181,6 @@
             :msg ":No origin specified"})))
 
 
-;;; Whois send these three commands:
-;;;:holmes.freenode.net 311 dakrone dakrone ~dakrone rrcs-10-10-10-10.midsouth.biz.rr.com * :dakrone
-;;;:holmes.freenode.net 319 dakrone dakrone :#sonian-devops #sonian-safe #sonian #clojure 
-;;;:holmes.freenode.net 318 dakrone dakrone :End of /WHOIS list.
-x
 (defcommand whois [channel username]
   (if (not (empty? username))
     (when-let [user (user-for-nick username)]
