@@ -57,7 +57,7 @@
     (transmit s "NICK foo")
     (is (received? s #"Welcome to the .* foo"))
     (transmit s "NICK optimus′")
-    (is (received? s #":foo!danlarkin@localhost NICK :optimus′"))))
+    (is (received? s #":foo!danlarkin@.* NICK :optimus′"))))
 
 (deftest incomplete-registration
   (with-connection s
