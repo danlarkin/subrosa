@@ -116,6 +116,9 @@
 (defn room-for-name [room-name]
   (first (select @db :room {:name room-name})))
 
+(defn rooms-for-nick [nick]
+  (filter #(nick-in-room? nick %) (all-rooms)))
+
 (defn maybe-create-room! [room-name]
   (when-not (room-for-name room-name)
     (alter db add-tuple :room {:name room-name
