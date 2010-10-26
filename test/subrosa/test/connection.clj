@@ -99,3 +99,14 @@
     (transmit s "nick dan")
     (transmit s "user dan 0 * :Dan Larkin")
     (is (received? s #"Welcome to the .* dan$"))))
+
+(deftest whois-command
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #foo")
+    (transmit s "WHOIS dan")
+    ;;;    (transmit s "WHOIS") ; test that this doesn't throw sometime
+    (is (received? s #"~dan .* \* :Dan Larkin"))
+    (is (received? s #"#foo"))
+    (is (received? s #":End of /WHOIS list"))))
