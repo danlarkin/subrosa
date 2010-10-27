@@ -183,7 +183,9 @@
 
 (defcommand whois [channel username]
   (if (empty? username)
-    (send-to-client channel 431 ":No nickname given")
+    (raise {:type :client-error
+            :code 431
+            :msg ":No nickname given"})
     (when-let [user (user-for-nick username)]
       (let [nick (:nick user)
             real-name (:real-name user)
