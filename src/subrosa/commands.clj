@@ -218,7 +218,7 @@
         nick (nick-for-channel channel)]
     (doseq [room rooms]
       (if (not (empty? room))
-        (if (some #{room} (all-rooms))
+        (if (room-for-name room)
           (if (nick-in-room? nick room)
             (dosync
              (send-to-room room (format ":%s PART %s :%s"
