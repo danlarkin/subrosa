@@ -106,7 +106,6 @@
     (transmit s "USER dan 0 * :Dan Larkin")
     (transmit s "JOIN #foo")
     (transmit s "WHOIS dan")
-    ;;;    (transmit s "WHOIS") ; test that this doesn't throw sometime
     (is (received? s #"~dan .* \* :Dan Larkin"))
     (is (received? s #"#foo"))
     (is (received? s #":End of /WHOIS list"))))
