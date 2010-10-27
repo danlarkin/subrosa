@@ -19,32 +19,27 @@
     (is (received? s #"353 dan = #foo :dan"))
     (is (received? s #"End of NAMES list"))))
 
-(deftest part
-  (testing "a user"
-    (with-connection user
-      (transmit user "NICK don")
-      (transmit user "USER don 0 * :Don K. Bahls")
-      (transmit user "JOIN #foo")
-      (with-connection observer
-        (transmit observer "NICK x")
-        (transmit observer "USER x 0 * :USER X")
-        (transmit observer "JOIN #foo")
-        (transmit observer "JOIN #lolcats")
-        (testing "requesting to part"
-          (testing "should receive get an error"
-            (testing "if they don't provide a channel to part"
-              (transmit user "PART")
-              (is (received? user #"461 don :Not enough parameters")))
-            (testing "if the channel doesn't exist"
-              (transmit user "PART #bahls")
-              (is (received? user #"403 don :No such channel")))
-            (testing "if they aren't in the channel"
-              (transmit user "PART #lolcats")
-              (is (received? user #"442 don :You're not on that channel"))))
-          (transmit user "PART #foo")
-          (testing "should trigger a part message sent to the whole channel"
-            (doseq [x [user observer]]
-              (is (received? x #":don!don@localhost PART #foo :don")))))))))
+(deftest part-command
+  (with-connection s1
+    (transmit s1 "NICK dan")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "JOIN #foo2")
+      (transmit s1 "PART")
+      (is (received? s1 #"461 dan PART :Not enough parameters"))
+      (transmit s1 "PART #foobar")
+      (is (received? s1 #"403 dan #foobar :No such channel"))
+      (transmit s1 "PART #foo2")
+      (is (received? s1 #"442 dan #foo2 :You're not on that channel"))
+      (transmit s1 "PART #foo")
+      (is (received? s1 #":dan!dan@.* PART #foo :dan"))
+      (is (received? s2 #":dan!dan@.* PART #foo :dan"))
+      (transmit s2 "PART #foo :Hey guys I'm outta here!")
+      (is (received? s2 #":dan2!dan@.* PART #foo :Hey guys I'm outta here!")))))
 
 (deftest topic-command
   (with-connection s
