@@ -103,10 +103,10 @@
 (deftest whois-command
   (with-connection s
     (transmit s "NICK dan")
-    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "USER dddan 0 * :Dan Larkin")
     (transmit s "JOIN #foo")
     (transmit s "WHOIS dan")
-    (is (received? s #"~dan .* \* :Dan Larkin"))
+    (is (received? s #"311 dan dddan .* \* :Dan Larkin"))
     (is (received? s #"#foo"))
     (is (received? s #":End of /WHOIS list"))))
 
