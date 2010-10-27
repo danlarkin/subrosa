@@ -117,7 +117,7 @@
   (first (select @db :room {:name room-name})))
 
 (defn rooms-for-nick [nick]
-  (filter #(nick-in-room? nick %) (all-rooms)))
+  (map :room-name (select @db :user-in-room {:user-nick nick})))
 
 (defn maybe-create-room! [room-name]
   (when-not (room-for-name room-name)

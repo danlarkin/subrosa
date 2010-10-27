@@ -182,15 +182,18 @@
 
 
 (defcommand whois [channel username]
-  (if (not (empty? username))
+  (if (empty? username)
+    (send-to-client channel 431 ":No nickname given")
     (when-let [user (user-for-nick username)]
       (let [nick (:nick user)
             real-name (:real-name user)
-            rooms (rooms-for-nick nick)]
-        #_(println user)
-        #_(println rooms)
-        (send-to-client channel 311 (format "~%s fake.host.name * %s"
+            rooms (rooms-for-nick nick)
+            hostname (-> channel
+                         (.getLocalAddress)
+                         (.getHostName))]
+        (send-to-client channel 311 (format "~%s %s * %s"
                                             nick
+                                            hostname
                                             real-name))
         (send-to-client channel 319 (format ":%s" (apply str (interpose " " rooms))))
         (send-to-client channel 318 ":End of /WHOIS list")))))
