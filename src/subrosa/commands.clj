@@ -214,7 +214,7 @@
 
 (defcommand part [channel command]
   (let [[rooms-string part-message] (.split command ":" 2)
-        rooms (.split rooms-string ",")
+        rooms (map (memfn trim) (.split rooms-string ","))
         nick (nick-for-channel channel)]
     (doseq [room rooms]
       (if (not (empty? room))
