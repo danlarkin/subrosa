@@ -124,13 +124,18 @@
     (alter db add-tuple :room {:name room-name
                                :topic nil})))
 
+(defn maybe-delete-room! [room-name]
+  (when (seq (select @db :user-in-room {:room-name room-name}))
+    (alter db remove-tuple :room {:room-name room-name})))
+
 (defn add-nick-to-room! [nick room-name]
   (when-not (nick-in-room? nick room-name)
     (maybe-create-room! room-name)
     (alter db add-tuple :user-in-room {:user-nick nick :room-name room-name})))
 
 (defn remove-nick-from-room! [nick room-name]
-  (alter db remove-tuple :user-in-room {:user-nick nick :room-name room-name}))
+  (alter db remove-tuple :user-in-room {:user-nick nick :room-name room-name})
+  (maybe-delete-room! room-name))
 
 (defn topic-for-room [room-name]
   (:topic (room-for-name room-name)))
