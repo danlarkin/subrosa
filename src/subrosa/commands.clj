@@ -228,10 +228,10 @@
              (remove-nick-from-room! nick room))
             (raise {:type :client-error
                     :code 442
-                    :msg ":You're not on that channel"}))
+                    :msg (format "%s :You're not on that channel" room)}))
           (raise {:type :client-error
                   :code 403
-                  :msg ":No such channel"}))
+                  :msg (format "%s :No such channel" room)}))
         (raise {:type :client-error
                 :code 461
-                :msg ":Not enough parameters"})))))
+                :msg "PART :Not enough parameters"})))))
