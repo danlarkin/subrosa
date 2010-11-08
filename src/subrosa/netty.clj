@@ -25,13 +25,13 @@
 
 (defn upstream-stage [handler]
   (reify ChannelUpstreamHandler
-         (handleUpstream [_ ctx evt]
-                         (.sendUpstream ctx (or (handler evt) evt)))))
+    (handleUpstream [_ ctx evt]
+                    (.sendUpstream ctx (or (handler evt) evt)))))
 
 (defn downstream-stage [handler]
   (reify ChannelDownstreamHandler
-         (handleDownstream [_ ctx evt]
-                           (.sendDownstream ctx (or (handler evt) evt)))))
+    (handleDownstream [_ ctx evt]
+                      (.sendDownstream ctx (or (handler evt) evt)))))
 
 (defn message-stage [handler]
   (upstream-stage
