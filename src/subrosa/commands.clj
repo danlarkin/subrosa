@@ -1,42 +1,44 @@
 (ns subrosa.commands
   (:use [subrosa.client]
+        [subrosa.observable :only [get-observable]]
         [subrosa.utils :only [interleave-all]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
 
-(defmulti dispatch-command (fn [cmd & _] cmd))
-
 (defn dispatch-message [message channel]
-  (let [[cmd args] (seq (.split message " " 2))]
-    (dispatch-command (.toLowerCase cmd) channel (or args ""))))
+  (let [[cmd args] (seq (.split message " " 2))
+        observable (get-observable (.toLowerCase cmd))]
+    (if-not (zero? (.countObservers observable))
+      (.ENGAGENOTIFICATIONSIMMEDIATELY observable channel (or args ""))
+      (when (authenticated? channel)
+        (raise {:type :client-error
+                :code 421
+                :msg (format "%s :Unknown command" cmd)})))))
 
 (defn fix-args
   [require-auth? fn-tail]
   (let [[f & r] fn-tail]
-    `(~(vec (cons '_ f))
+    `(~(vector '_ '_ (vec (cons '_ f)))
       ~(if require-auth?
          `(when (authenticated? ~(first f))
             ~@r)
          `(do ~@r)))))
 
+(defmacro add-observer [cmd fixed-fn-tail]
+  `(let [observable# (get-observable ~(.toLowerCase (str cmd)))]
+     (.addObserver observable# (reify java.util.Observer
+                                 (~'update ~@fixed-fn-tail)))))
+
 (defmacro defcommand*
   "Define a command which can be called by unauthenticated users."
   [cmd & fn-tail]
-  `(.addMethod dispatch-command ~(.toLowerCase (str cmd))
-               (fn ~@(fix-args false fn-tail))))
+  `(add-observer ~cmd ~(fix-args false fn-tail)))
 
 (defmacro defcommand
   "Define a command which requires its user to be authenticated."
   [cmd & fn-tail]
-  `(.addMethod dispatch-command ~(.toLowerCase (str cmd))
-               (fn ~@(fix-args true fn-tail))))
-
-(defmethod dispatch-command :default [cmd channel args]
-  (when (authenticated? channel)
-    (raise {:type :client-error
-            :code 421
-            :msg (format "%s :Unknown command" cmd)})))
+  `(add-observer ~cmd ~(fix-args true fn-tail)))
 
 (defn valid-nick-character? [character]
   (and (not (Character/isWhitespace character))

@@ -116,3 +116,10 @@
     (transmit s "USER dan 0 * :Dan Larkin")
     (transmit s "WHOIS")
     (is (received? s #":No nickname given"))))
+
+(deftest nonextant-command
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "THISCOMMANDDOESNOTEXIST")
+    (is (received? s #":Unknown command"))))
