@@ -2,7 +2,8 @@
   (:use [subrosa.server :only [reset-all-state!]]
         [subrosa.client :only [add-channel! remove-channel! send-to-client
                                send-to-client*]]
-        [subrosa.commands :only [dispatch-message]])
+        [subrosa.commands :only [dispatch-message]]
+        [clojure.stacktrace :only [root-cause]])
   (:import [java.net InetSocketAddress]
            [java.util.concurrent Executors]
            [org.jboss.netty.bootstrap ServerBootstrap]
@@ -41,18 +42,18 @@
 
 (defn netty-error-handler [up-or-down evt]
   (when (instance? ExceptionEvent evt)
-    (if (instance? clojure.contrib.condition.Condition (.getCause evt))
-      (let [condition (meta (.getCause evt))]
+    (if (instance? clojure.contrib.condition.Condition (root-cause evt))
+      (let [condition (meta (root-cause evt))]
         (when (= :client-error (:type condition))
           (send-to-client
            (.getChannel evt) (:code condition) (:msg condition)))
         (when (= :client-disconnect (:type condition))
           (println "Tried to grab data about a client after disconnect.")))
-      (when (not (some #{(class (.getCause evt))}
+      (when (not (some #{(class (root-cause evt))}
                        #{java.io.IOException
                          java.nio.channels.ClosedChannelException}))
         (println up-or-down "ERROR")
-        (.printStackTrace (.getCause evt)))))
+        (.printStackTrace (root-cause evt)))))
   evt)
 
 (defn connect-handler [channel-group evt]
