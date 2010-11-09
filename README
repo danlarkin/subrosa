@@ -4,3 +4,8 @@ It's event driven, backed by the Netty server framework.
 
 It's also nowhere near complete and totally unsuitable for anything
 other than hacking on.
+
+Handlers for received commands (NICK, JOIN, etc.) are implemented via
+java.util.Observable/Observers. This enables many functions (without
+knowledge of eachother) to run on each received command -- think
+plugins.
