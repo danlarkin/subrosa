@@ -19,26 +19,27 @@
 (defn fix-args
   [require-auth? fn-tail]
   (let [[f & r] fn-tail]
-    `(~(vector '_ '_ (vec (cons '_ f)))
+    `(~(vec (cons '_ f))
       ~(if require-auth?
          `(when (authenticated? ~(first f))
             ~@r)
          `(do ~@r)))))
 
-(defmacro add-observer [cmd fixed-fn-tail]
-  `(let [observable# (get-observable ~(.toLowerCase (str cmd)))]
-     (.addObserver observable# (reify java.util.Observer
-                                 (~'update ~@fixed-fn-tail)))))
+(defn add-observer [cmd fn]
+  (let [observable (get-observable (.toLowerCase (str cmd)))]
+    (.addObserver observable (reify java.util.Observer
+                               (update [this observable args]
+                                       (apply fn args))))))
 
 (defmacro defcommand*
   "Define a command which can be called by unauthenticated users."
   [cmd & fn-tail]
-  `(add-observer ~cmd ~(fix-args false fn-tail)))
+  `(add-observer '~cmd (fn ~@(fix-args false fn-tail))))
 
 (defmacro defcommand
   "Define a command which requires its user to be authenticated."
   [cmd & fn-tail]
-  `(add-observer ~cmd ~(fix-args true fn-tail)))
+  `(add-observer '~cmd (fn ~@(fix-args true fn-tail))))
 
 (defn valid-nick-character? [character]
   (and (not (Character/isWhitespace character))
