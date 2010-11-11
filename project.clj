@@ -1,6 +1,7 @@
 (defproject subrosa "1.0.0-SNAPSHOT"
   :main subrosa.main
   :aot [subrosa.observable]
+  :resources-path "etc"
   :repositories {"jboss"
                  "http://repository.jboss.org/nexus/content/groups/public/"}
   :dependencies [[org.clojure/clojure "1.2.0"]
