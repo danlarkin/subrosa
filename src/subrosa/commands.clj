@@ -1,6 +1,6 @@
 (ns subrosa.commands
   (:use [subrosa.client]
-        [subrosa.observable :only [get-observable]]
+        [subrosa.observable :only [get-observable replace-observer]]
         [subrosa.utils :only [interleave-all]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
@@ -25,21 +25,15 @@
             ~@r)
          `(do ~@r)))))
 
-(defn add-observer [cmd fn]
-  (let [observable (get-observable (.toLowerCase (str cmd)))]
-    (.addObserver observable (reify java.util.Observer
-                               (update [this observable args]
-                                       (apply fn args))))))
-
 (defmacro defcommand*
   "Define a command which can be called by unauthenticated users."
   [cmd & fn-tail]
-  `(add-observer '~cmd (fn ~@(fix-args false fn-tail))))
+  `(replace-observer :commands '~cmd (fn ~@(fix-args false fn-tail))))
 
 (defmacro defcommand
   "Define a command which requires its user to be authenticated."
   [cmd & fn-tail]
-  `(add-observer '~cmd (fn ~@(fix-args true fn-tail))))
+  `(replace-observer :commands '~cmd (fn ~@(fix-args true fn-tail))))
 
 (defn valid-nick-character? [character]
   (and (not (Character/isWhitespace character))

@@ -17,3 +17,19 @@
 
 (def get-observable
   (memoize (fn [cmd] (subrosa.observable. cmd))))
+
+(defn add-observer [cmd fn]
+  (let [observable (get-observable (.toLowerCase (str cmd)))
+        observer (reify java.util.Observer
+                   (update [this observable args]
+                           (apply fn args)))]
+    (.addObserver observable observer)
+    observer))
+
+(let [observers (atom {})]
+  (defn replace-observer [token cmd fn]
+    (let [observable (get-observable (.toLowerCase (str cmd)))]
+      (when-let [observer (@observers (str token cmd))]
+        (.deleteObserver observable observer))
+      (let [observer (add-observer cmd fn)]
+        (swap! observers assoc (str token cmd) observer)))))
