@@ -29,6 +29,7 @@
       (transmit s2 "USER dan 0 * :Dan Larkin")
       (transmit s2 "JOIN #foo")
       (transmit s2 "JOIN #foo2")
+      (Thread/sleep 1000)
       (transmit s1 "PART")
       (is (received? s1 #"461 dan PART :Not enough parameters"))
       (transmit s1 "PART #foobar")
