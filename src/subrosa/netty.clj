@@ -3,6 +3,7 @@
         [subrosa.client :only [add-channel! remove-channel! send-to-client
                                send-to-client*]]
         [subrosa.commands :only [dispatch-message]]
+        [subrosa.plugins :only [load-plugins]]
         [clojure.stacktrace :only [root-cause]])
   (:import [java.net InetSocketAddress]
            [java.util.concurrent Executors]
@@ -111,6 +112,7 @@
     {:start-fn (fn []
                  (println "Starting Subrosa.")
                  (reset-all-state!)
+                 (load-plugins)
                  (->> port
                       InetSocketAddress.
                       (.bind bootstrap)
