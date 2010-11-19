@@ -125,3 +125,25 @@
     (transmit s "USER dan 0 * :Dan Larkin")
     (transmit s "THISCOMMANDDOESNOTEXIST")
     (is (received? s #":Unknown command"))))
+
+(deftest quit-command
+  (with-connection s1
+    (with-connection s2
+      (transmit s1 "NICK dan")
+      (transmit s1 "USER dan 0 * :Dan Larkin")
+      (is (received? s1 #"Welcome to the .* dan$"))
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (is (received? s2 #"Welcome to the .* dan2$"))
+      ;; does dan show up in users list?
+      (transmit s2 "WHOIS dan")
+      (is (received? s2 #"dan"))
+      ;; tell dan to disconnect
+      (transmit s1 "QUIT")
+      (is (received? s1 #"QUIT :Client Quit"))
+      ;; attempt to read, to verify socket is closed:
+      (is (= -1 (.read (:in s1))))
+      (Thread/sleep 1000)
+      ;; make sure dan isn't in the user list anymore
+      (transmit s2 "WHOIS dan")
+      (is (received? s2 #"401 dan2 dan :No such nick/channel")))))
