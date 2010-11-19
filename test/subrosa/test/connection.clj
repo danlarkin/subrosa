@@ -105,10 +105,12 @@
     (transmit s "NICK dan")
     (transmit s "USER dddan 0 * :Dan Larkin")
     (transmit s "JOIN #foo")
+    (transmit s "WHOIS superdan")
+    (is (received? s #"No such nick/channel"))
     (transmit s "WHOIS dan")
     (is (received? s #"311 dan dddan .* \* :Dan Larkin"))
-    (is (received? s #"#foo"))
-    (is (received? s #":End of /WHOIS list"))))
+    (is (received? s #"319 dan dddan :#foo"))
+    (is (received? s #":End of WHOIS list"))))
 
 (deftest whois-no-nick-command
   (with-connection s

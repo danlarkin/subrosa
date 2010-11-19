@@ -180,7 +180,7 @@
 
 (defcommand whois [channel username]
   (if-not (empty? username)
-    (when-let [user (user-for-nick username)]
+    (if-let [user (user-for-nick username)]
       (let [nick (:nick user)
             user-name (:user-name user)
             real-name (:real-name user)
@@ -192,9 +192,13 @@
                                             user-name
                                             hostname
                                             real-name))
-        (send-to-client channel 319 (format ":%s"
+        (send-to-client channel 319 (format "%s :%s"
+                                            user-name
                                             (apply str (interpose " " rooms))))
-        (send-to-client channel 318 ":End of /WHOIS list")))
+        (send-to-client channel 318 ":End of WHOIS list"))
+      (raise {:type :client-error
+              :code 401
+              :msg (format "%s :No such nick/channel" username)}))
     (raise {:type :client-error
             :code 431
             :msg ":No nickname given"})))
