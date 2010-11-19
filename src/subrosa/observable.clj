@@ -9,11 +9,11 @@
                          void]]))
 
 (defn -init [string]
-  [[] (ref string)])
+  [[] string])
 
 (defn -ENGAGENOTIFICATIONSIMMEDIATELY [this channel args]
   (.setChanged this)
-  (.notifyObservers this [@(.state this) channel args]))
+  (.notifyObservers this [(.state this) channel args]))
 
 (def get-observable
   (memoize (fn [cmd] (subrosa.observable. cmd))))
@@ -22,7 +22,7 @@
   (let [observable (get-observable (.toLowerCase (str cmd)))
         observer (reify java.util.Observer
                    (update [this observable args]
-                           (apply fn args)))]
+                     (apply fn args)))]
     (.addObserver observable observer)
     observer))
 
