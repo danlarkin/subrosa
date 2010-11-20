@@ -28,12 +28,12 @@
 (defn upstream-stage [handler]
   (reify ChannelUpstreamHandler
     (handleUpstream [_ ctx evt]
-                    (.sendUpstream ctx (or (handler evt) evt)))))
+      (.sendUpstream ctx (or (handler evt) evt)))))
 
 (defn downstream-stage [handler]
   (reify ChannelDownstreamHandler
     (handleDownstream [_ ctx evt]
-                      (.sendDownstream ctx (or (handler evt) evt)))))
+      (.sendDownstream ctx (or (handler evt) evt)))))
 
 (defn message-stage [handler]
   (upstream-stage
@@ -109,10 +109,10 @@
     (doto bootstrap
       (.setOption "child.tcpNoDelay" true)
       (.setOption "child.keepAlive" true))
+    (load-plugins)
     {:start-fn (fn []
                  (println "Starting Subrosa.")
                  (reset-all-state!)
-                 (load-plugins)
                  (->> port
                       InetSocketAddress.
                       (.bind bootstrap)
