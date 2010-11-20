@@ -1,1 +1,1 @@
-{:foo 42}
+{:logging {:directory "log/"}}

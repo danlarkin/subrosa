@@ -131,6 +131,7 @@
     (with-connection s2
       (transmit s1 "NICK dan")
       (transmit s1 "USER dan 0 * :Dan Larkin")
+      (transmit s1 "JOIN #foo")
       (is (received? s1 #"Welcome to the .* dan$"))
       (transmit s2 "NICK dan2")
       (transmit s2 "USER dan 0 * :Dan Larkin")
