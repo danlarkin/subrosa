@@ -85,6 +85,7 @@
                                            (format ":%s QUIT :Client Quit"
                                                    (format-client channel)))]
     (await chan-future-agent)
+    (run-hook 'quit-hook channel quit-msg)
     (when-let [chan-future @chan-future-agent]
       (.addListener chan-future (ChannelFutureListener/CLOSE)))))
 
@@ -102,7 +103,8 @@
                                              (format-client channel)
                                              room-name))
              (dispatch-message (format "TOPIC %s" room-name) channel)
-             (dispatch-message (format "NAMES %s" room-name) channel))))
+             (dispatch-message (format "NAMES %s" room-name) channel)
+             (run-hook 'join-hook channel room-name))))
         (raise {:type :client-error
                 :code 461
                 :msg "JOIN :Not enough parameters"}))
@@ -156,9 +158,15 @@
     (if (not (empty? recipient))
       (if (not (nil? received-msg))
         (if (room-for-name recipient)
-          (send-to-room-except recipient msg channel)
+          (do
+            (send-to-room-except recipient msg channel)
+            (run-hook 'privmsg-room-hook
+                      channel recipient (subs received-msg 1)))
           (if-let [channel (channel-for-nick recipient)]
-            (send-to-client* channel msg)
+            (do
+              (send-to-client* channel msg)
+              (run-hook 'privmsg-nick-hook
+                        channel recipient (subs received-msg 1)))
             (raise {:type :client-error
                     :code 401
                     :msg (format "%s :No such nick/channel" recipient)})))
@@ -225,7 +233,8 @@
                                         (format-client channel)
                                         room
                                         (or part-message nick)))
-             (remove-nick-from-room! nick room))
+             (remove-nick-from-room! nick room)
+             (run-hook 'part-hook channel room))
             (raise {:type :client-error
                     :code 442
                     :msg (format "%s :You're not on that channel" room)}))
