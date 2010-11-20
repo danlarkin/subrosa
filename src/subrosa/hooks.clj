@@ -3,19 +3,16 @@
 (def get-hook
   (comp
    (memoize
-    (fn [hook]
-      (ref {:hook hook
-            :listeners #{}})))
+    (fn [hook] (atom #{})))
    (memfn toLowerCase)
    str))
 
 (defn add-hook [hook fn]
-  (dosync
-   (commute (get-hook hook) update-in [:listeners] conj fn)))
+  (swap! (get-hook hook) conj fn))
 
 (defn hooked? [hook]
-  (not (empty? (:listeners @(get-hook hook)))))
+  (not (empty? @(get-hook hook))))
 
 (defn run-hook [hook & args]
-  (doseq [listener (:listeners @(get-hook hook))]
+  (doseq [listener @(get-hook hook)]
     (apply listener hook args)))
