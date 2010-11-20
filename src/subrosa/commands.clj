@@ -1,16 +1,15 @@
 (ns subrosa.commands
   (:use [subrosa.client]
-        [subrosa.observable :only [get-observable replace-observer]]
+        [subrosa.hooks :only [add-hook hooked? run-hook]]
         [subrosa.utils :only [interleave-all]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
 
 (defn dispatch-message [message channel]
-  (let [[cmd args] (seq (.split message " " 2))
-        observable (get-observable (.toLowerCase cmd))]
-    (if-not (zero? (.countObservers observable))
-      (.ENGAGENOTIFICATIONSIMMEDIATELY observable channel (or args ""))
+  (let [[cmd args] (seq (.split message " " 2))]
+    (if (hooked? cmd)
+      (run-hook cmd channel (or args ""))
       (when (authenticated? channel)
         (raise {:type :client-error
                 :code 421
@@ -28,12 +27,12 @@
 (defmacro defcommand*
   "Define a command which can be called by unauthenticated users."
   [cmd & fn-tail]
-  `(replace-observer :commands '~cmd (fn ~@(fix-args false fn-tail))))
+  `(add-hook '~cmd (fn ~@(fix-args false fn-tail))))
 
 (defmacro defcommand
   "Define a command which requires its user to be authenticated."
   [cmd & fn-tail]
-  `(replace-observer :commands '~cmd (fn ~@(fix-args true fn-tail))))
+  `(add-hook '~cmd (fn ~@(fix-args true fn-tail))))
 
 (defn valid-nick-character? [character]
   (and (not (Character/isWhitespace character))
