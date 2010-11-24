@@ -9,16 +9,22 @@
 (def time-formatter (SimpleDateFormat. "HH:mm:ss"))
 (def date-formatter (SimpleDateFormat. "yyyy-MM-dd"))
 
-(defn get-log-name [log-dir room-name]
-  (str log-dir "/" room-name "_" (.format date-formatter (Date.)) ".log"))
+(defn format-date []
+  (.format date-formatter (Date.)))
 
-(defn append [room-name msg]
+(defn format-time []
+  (.format time-formatter (Date.)))
+
+(defn get-log-name [room-name]
   (let [log-dir (File. (System/getProperty "user.dir")
                        (config :logging :directory))]
     (.mkdirs log-dir)
-    (with-open [out (FileWriter. (get-log-name log-dir room-name) true)]
-      (.write out (.toCharArray
-                   (str (.format time-formatter (Date.)) " " msg "\n"))))))
+    (str log-dir "/" room-name "_" (format-date) ".log")))
+
+(defn append [room-name msg]
+  (with-open [out (FileWriter. (get-log-name room-name) true)]
+    (.write out (.toCharArray
+                 (str (format-time) " " msg "\n")))))
 
 (defmulti log-dispatch (fn [& args] (first args)))
 

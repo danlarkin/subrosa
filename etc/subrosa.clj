@@ -1,1 +1,1 @@
-{:logging {:directory "log/"}}
+{:logging {:directory nil}}
