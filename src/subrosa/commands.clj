@@ -85,7 +85,7 @@
                                            (format ":%s QUIT :Client Quit"
                                                    (format-client channel)))]
     (await chan-future-agent)
-    (run-hook 'quit-hook channel quit-msg)
+    (run-hook 'quit-hook channel "Client Quit")
     (when-let [chan-future @chan-future-agent]
       (.addListener chan-future (ChannelFutureListener/CLOSE)))))
 
