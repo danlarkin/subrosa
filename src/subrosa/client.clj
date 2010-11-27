@@ -47,7 +47,12 @@
 (defn change-nickname! [channel new-nick]
   (let [existing-user (user-for-channel channel)]
     (alter db remove-tuple :user existing-user)
-    (alter db add-tuple :user (assoc existing-user :nick new-nick))))
+    (alter db add-tuple :user (assoc existing-user :nick new-nick))
+    (doseq [user-in-room (select @db :user-in-room
+                                 {:user-nick (:nick existing-user)})]
+      (alter db remove-tuple :user-in-room user-in-room)
+      (alter db add-tuple :user-in-room
+             (assoc user-in-room :user-nick new-nick)))))
 
 (defn maybe-add-authentication-step! [channel step]
   (when-not (authenticated? channel)
