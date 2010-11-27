@@ -52,6 +52,7 @@
          (when (authenticated? channel)
            (send-to-client* channel (format ":%s NICK :%s"
                                             (format-client channel) nick)))
+         (run-hook 'nick-hook channel (nick-for-channel channel) nick)
          (change-nickname! channel nick)
          (add-user-for-nick! channel nick)
          (maybe-add-authentication-step! channel "NICK")

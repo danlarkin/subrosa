@@ -57,6 +57,11 @@
                     (or quit-msg "Client Quit")
                     room-name))))
 
+(defmethod log-dispatch 'nick-hook [hook channel old-nick new-nick]
+  (doseq [room-name (rooms-for-nick old-nick)]
+    (append room-name
+            (format "--- nick: %s is now known as %s" old-nick new-nick))))
+
 (defn log [& args]
   (when (config :logging :directory)
     (apply log-dispatch args)))
@@ -65,4 +70,5 @@
 (add-hook 'join-hook log)
 (add-hook 'part-hook log)
 (add-hook 'quit-hook log)
+(add-hook 'nick-hook log)
 
