@@ -1,7 +1,8 @@
 (ns subrosa.client
   (:use [clojure.contrib.datalog.database :only [add-tuple remove-tuple select]]
         [clojure.contrib.condition :only [raise]]
-        [subrosa.server]))
+        [subrosa.server]
+        [subrosa.config :only [config]]))
 
 (defn user-for-channel [channel]
   (if-let [user (first (select @db :user {:channel channel}))]
@@ -17,8 +18,11 @@
 (defn channel-for-nick [nick]
   (-> nick user-for-nick :channel))
 
+(defn authentication-for-channel [channel]
+  (:pending? (user-for-channel channel)))
+
 (defn authenticated? [channel]
-  (-> channel user-for-channel :pending? nil?))
+  (nil? (authentication-for-channel channel)))
 
 (defn add-channel! [channel]
   (alter db add-tuple :user
@@ -66,7 +70,7 @@
      (send-to-client*
       channel
       (format ":%s %03d %s %s"
-              from code (nick-for-channel channel) msg))))
+              from code (or (nick-for-channel channel) "*") msg))))
 
 (defn send-welcome [channel]
   (send-to-client channel 1
@@ -85,13 +89,22 @@
                           (hostname)
                           (:version server))))
 
+(defn get-required-authentication-steps []
+  (if (config :password)
+    #{"NICK" "USER" "PASS"}
+    #{"NICK" "USER"}))
+
 (defn maybe-update-authentication! [channel]
   (let [user (user-for-channel channel)]
-    (when (and (not (authenticated? channel))
-               (= (:pending? user) #{"NICK" "USER"}))
-      (alter db remove-tuple :user user)
-      (alter db add-tuple :user (assoc user :pending? nil))
-      (send-welcome channel))))
+    (when (not (authenticated? channel))
+      (if (not (and (config :password) (= (:pending? user) #{"NICK" "USER"})))
+        (when (= (:pending? user) (get-required-authentication-steps))
+          (alter db remove-tuple :user user)
+          (alter db add-tuple :user (assoc user :pending? nil))
+          (send-welcome channel))
+        (raise {:type :protocol-error
+                :disconnect true
+                :msg ":Bad Password"})))))
 
 (defn update-user-for-nick! [nick [user-name mode _ real-name]]
   (let [user (user-for-nick nick)]

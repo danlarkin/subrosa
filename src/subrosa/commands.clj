@@ -2,6 +2,7 @@
   (:use [subrosa.client]
         [subrosa.hooks :only [add-hook hooked? run-hook]]
         [subrosa.utils :only [interleave-all]]
+        [subrosa.config :only [config]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
@@ -78,6 +79,26 @@
                 :msg  "USER :Not enough parameters"})))
     (raise {:type :client-error
             :code 462
+            :msg ":Unauthorized command (already registered)"})))
+
+(defcommand* pass [channel password]
+  (if (and (not (authenticated? channel))
+           (empty? (authentication-for-channel channel)))
+    (if-not (empty? password)
+      (if (and (config :password) (= password (config :password)))
+        (dosync
+         (maybe-add-authentication-step! channel "PASS")
+         (maybe-update-authentication! channel))
+        (raise {:type :protocol-error
+                :disconnect true
+                :msg ":Bad Password"}))
+      (raise {:type :client-error
+              :code 461
+              :disconnect true
+              :msg  "PASS :Not enough parameters"}))
+    (raise {:type :client-error
+            :code 462
+            :disconnect true
             :msg ":Unauthorized command (already registered)"})))
 
 (defcommand quit [channel quit-msg]

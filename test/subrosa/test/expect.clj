@@ -22,7 +22,10 @@
 
 (defn socket-read-line [in]
   (try
-    (.readLine in)
+    (let [read (.readLine in)]
+      (if (nil? read)
+        :timeout
+        read))
     (catch java.net.SocketTimeoutException e
       :timeout)))
 

@@ -48,12 +48,22 @@
 (defn netty-error-handler [up-or-down evt]
   (when (instance? ExceptionEvent evt)
     (if (instance? clojure.contrib.condition.Condition (root-cause evt))
-      (let [condition (meta (root-cause evt))]
-        (when (= :client-error (:type condition))
-          (send-to-client
-           (.getChannel evt) (:code condition) (:msg condition)))
-        (when (= :client-disconnect (:type condition))
-          (println "Tried to grab data about a client after disconnect.")))
+      (let [condition (meta (root-cause evt))
+            chan-future-agent
+            (condp = (:type condition)
+                :client-error (send-to-client
+                               (.getChannel evt)
+                               (:code condition)
+                               (:msg condition))
+                :protocol-error (send-to-client*
+                                 (.getChannel evt)
+                                 (format "ERROR %s" (:msg condition)))
+                :client-disconnect (println
+                                    "Accessed client data after disconnect."))]
+        (when (:disconnect condition)
+          (await chan-future-agent)
+          (when-let [chan-future @chan-future-agent]
+            (.addListener chan-future (ChannelFutureListener/CLOSE)))))
       (when (not (some #{(class (root-cause evt))}
                        #{java.io.IOException
                          java.nio.channels.ClosedChannelException}))
