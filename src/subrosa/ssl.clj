@@ -7,12 +7,12 @@
 (defn make-keystore []
   (let [ks (KeyStore/getInstance "JKS")]
     (with-open [is (FileInputStream. (config :ssl :keystore))]
-      (.load ks is (.toCharArray "foobar")))
+      (.load ks is (.toCharArray (config :ssl :password))))
     ks))
 
 (defn make-keymanagerfactory []
   (doto (KeyManagerFactory/getInstance "SunX509")
-    (.init (make-keystore) (.toCharArray "foobar"))))
+    (.init (make-keystore) (.toCharArray (config :ssl :password)))))
 
 (defn make-ssl-context []
   (doto (SSLContext/getInstance "SSL")

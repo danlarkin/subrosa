@@ -1,1 +1,3 @@
-{:logging {:directory nil}}
+{:logging {:directory nil}
+ :ssl {:keystore nil
+       :password nil}}
