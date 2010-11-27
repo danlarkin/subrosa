@@ -6,6 +6,8 @@
            [java.text SimpleDateFormat]
            [java.io File FileWriter]))
 
+(def io-agent (agent nil))
+
 (def time-formatter (SimpleDateFormat. "HH:mm:ss"))
 (def date-formatter (SimpleDateFormat. "yyyy-MM-dd"))
 
@@ -22,9 +24,12 @@
     (str log-dir "/" room-name "_" (format-date) ".log")))
 
 (defn append [room-name msg]
-  (with-open [out (FileWriter. (get-log-name room-name) true)]
-    (.write out (.toCharArray
-                 (str (format-time) " " msg "\n")))))
+  (send io-agent
+        (fn [_]
+          (io!
+           (with-open [out (FileWriter. (get-log-name room-name) true)]
+             (.write out (.toCharArray
+                          (str (format-time) " " msg "\n"))))))))
 
 (defmulti log-dispatch (fn [& args] (first args)))
 
