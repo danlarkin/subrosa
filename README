@@ -9,3 +9,6 @@ Handlers for received commands (NICK, JOIN, etc.) are implemented via
 java.util.Observable/Observers. This enables many functions (without
 knowledge of eachother) to run on each received command -- think
 plugins.
+
+Self-signed Keystores (for SSL) can be created with:
+keytool -genkey -alias subrosa -keyalg RSA -keystore subrosa.ks –storetype JKS
