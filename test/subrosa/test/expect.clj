@@ -1,8 +1,11 @@
 (ns subrosa.test.expect
   (:use [clojure.test]
         [clojure.string :only [join]]
-        [subrosa.netty :only [create-server]])
-  (:import [java.io BufferedReader InputStreamReader]))
+        [subrosa.netty :only [create-server]]
+        [subrosa.config :only [config]])
+  (:import [java.io BufferedReader InputStreamReader]
+           [javax.net.ssl X509TrustManager SSLContext]
+           [javax.net SocketFactory]))
 
 (def *timeout* 10000)
 (def *host* "localhost")
@@ -23,10 +26,21 @@
     (catch java.net.SocketTimeoutException e
       :timeout)))
 
+(defn create-socketfactory []
+  (if (config :ssl :keystore)
+    (let [tm (reify X509TrustManager
+               (checkClientTrusted [this chain auth-type])
+               (checkServerTrusted [this chain auth-type])
+               (getAcceptedIssuers [this]))
+          context (doto (SSLContext/getInstance "SSL")
+                    (.init nil (into-array [tm]) nil))]
+      (.getSocketFactory context))
+    (SocketFactory/getDefault)))
+
 (defn connect
   ([] (connect *host* *port*))
   ([host port]
-     (let [s (doto (java.net.Socket. host port)
+     (let [s (doto (.createSocket (create-socketfactory) host port)
                (.setSoTimeout 1000))]
        {:socket s
         :in (BufferedReader. (InputStreamReader. (.getInputStream s)))

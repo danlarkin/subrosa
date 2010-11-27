@@ -2,6 +2,8 @@
   (:use [subrosa.server :only [reset-all-state!]]
         [subrosa.client :only [add-channel! remove-channel! send-to-client
                                send-to-client*]]
+        [subrosa.config :only [config]]
+        [subrosa.ssl :only [make-ssl-engine]]
         [subrosa.commands :only [dispatch-message]]
         [subrosa.plugins :only [load-plugins]]
         [clojure.stacktrace :only [root-cause]])
@@ -10,7 +12,9 @@
            [org.jboss.netty.bootstrap ServerBootstrap]
            [org.jboss.netty.channel ChannelUpstreamHandler
             ChannelDownstreamHandler ChannelEvent ChannelState ChannelStateEvent
-            ExceptionEvent MessageEvent]
+            ExceptionEvent MessageEvent ChannelFutureListener Channels
+            ChannelPipelineFactory]
+           [org.jboss.netty.handler.ssl SslHandler]
            [org.jboss.netty.channel.group DefaultChannelGroup]
            [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
            [org.jboss.netty.handler.codec.frame Delimiters
@@ -57,11 +61,20 @@
         (.printStackTrace (root-cause evt)))))
   evt)
 
-(defn connect-handler [channel-group evt]
+(defn connect-handler [channel-group pipeline evt]
   (when (and (instance? ChannelStateEvent evt)
              (= (.getState evt) (ChannelState/CONNECTED))
              (.getValue evt))
-    (.add channel-group (.getChannel evt))
+    (if-let [ssl-handler (.get pipeline "ssl")]
+      (doto (.handshake ssl-handler)
+        (.addListener (reify ChannelFutureListener
+                        (operationComplete [_ channel-future]
+                          (if (.isSuccess channel-future)
+                            (.add channel-group (.getChannel evt))
+                            (-> channel-future
+                                .getChannel
+                                .close))))))
+      (.add channel-group (.getChannel evt)))
     (dosync
      (add-channel! (.getChannel evt))))
   evt)
@@ -85,12 +98,18 @@
     (.addLast "decoder" (StringDecoder.))
     (.addLast "encoder" (StringEncoder.))))
 
+(defn maybe-add-ssl-codec! [pipeline]
+  (if (config :ssl :keystore)
+    (doto pipeline
+      (.addLast "ssl" (SslHandler. (make-ssl-engine) false)))
+    pipeline))
+
 (defn add-irc-codec! [pipeline channel-group]
   (doto pipeline
     (.addLast "upstream-error"
               (upstream-stage (partial #'netty-error-handler "UPSTREAM")))
     (.addLast "connect" (upstream-stage
-                         (partial #'connect-handler channel-group)))
+                         (partial #'connect-handler channel-group pipeline)))
     (.addLast "message" (message-stage #'message-handler))
     (.addLast "disconnect" (upstream-stage #'disconnect-handler))
     (.addLast "downstream-error"
@@ -101,11 +120,13 @@
                          (Executors/newCachedThreadPool)
                          (Executors/newCachedThreadPool))
         bootstrap (ServerBootstrap. channel-factory)
-        pipeline (.getPipeline bootstrap)
         channel-group (DefaultChannelGroup.)]
-    (doto pipeline
-      add-string-codec!
-      (add-irc-codec! channel-group))
+    (.setPipelineFactory bootstrap (reify ChannelPipelineFactory
+                                     (getPipeline [_]
+                                       (doto (Channels/pipeline)
+                                         maybe-add-ssl-codec!
+                                         add-string-codec!
+                                         (add-irc-codec! channel-group)))))
     (doto bootstrap
       (.setOption "child.tcpNoDelay" true)
       (.setOption "child.keepAlive" true))
