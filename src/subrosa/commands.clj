@@ -1,11 +1,13 @@
 (ns subrosa.commands
   (:use [subrosa.client]
-        [subrosa.hooks :only [add-hook hooked? run-hook]]
+        [subrosa.hooks :only [reset-get-hook! add-hook hooked? run-hook]]
         [subrosa.utils :only [interleave-all]]
         [subrosa.config :only [config]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
+
+(reset-get-hook!)
 
 (defn dispatch-message [message channel]
   (let [[cmd args] (seq (.split message " " 2))]

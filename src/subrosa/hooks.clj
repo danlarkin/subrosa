@@ -1,11 +1,14 @@
 (ns subrosa.hooks)
 
-(def get-hook
-  (comp
-   (memoize
-    (fn [hook] (atom #{})))
-   (memfn toLowerCase)
-   str))
+(declare get-hook)
+
+(defn reset-get-hook! []
+  (def get-hook
+    (comp
+     (memoize
+      (fn [hook] (atom #{})))
+     (memfn toLowerCase)
+     str)))
 
 (defn add-hook [hook fn]
   (swap! (get-hook hook) conj fn))
