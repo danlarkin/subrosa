@@ -178,6 +178,13 @@
           :when (not= chan channel)]
     (send-to-client* chan msg)))
 
+(defn send-to-clients-in-rooms-for-nick [nick msg channel]
+  (doseq [chan (into #{} (for [room-name (rooms-for-nick nick)
+                               chan (channels-in-room room-name)
+                               :when (not= chan channel)]
+                           chan))]
+    (send-to-client* chan msg)))
+
 (defn all-rooms []
   (map :name (select @db :room nil)))
 

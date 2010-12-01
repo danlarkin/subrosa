@@ -81,6 +81,32 @@
       (transmit s2 "JOIN #foo")
       (is (received? s1 #":dan2!dan@.* JOIN #foo")))))
 
+(deftest all-clients-receive-quit
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (Thread/sleep 1000) ; Give dan1 a chance to authenticate
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "QUIT")
+      (is (received? s1 #":dan2!dan@.* QUIT :Client Quit")))))
+
+(deftest all-clients-receive-nick-change
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (Thread/sleep 1000) ; Give dan1 a chance to authenticate
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "NICK superdan")
+      (is (received? s1 #":dan2!dan@.* NICK :superdan")))))
+
 (deftest list-rooms
   (with-connection s
     (transmit s "NICK dan")

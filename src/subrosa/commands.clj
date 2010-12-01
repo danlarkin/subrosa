@@ -50,8 +50,11 @@
       (if (not (user-for-nick nick))
         (dosync
          (when (authenticated? channel)
-           (send-to-client* channel (format ":%s NICK :%s"
-                                            (format-client channel) nick)))
+           (let [msg (format ":%s NICK :%s"
+                             (format-client channel) nick)]
+             (send-to-client* channel msg)
+             (send-to-clients-in-rooms-for-nick (nick-for-channel channel)
+                                                msg channel)))
          (run-hook 'nick-hook channel (nick-for-channel channel) nick)
          (change-nickname! channel nick)
          (add-user-for-nick! channel nick)
@@ -102,18 +105,25 @@
             :disconnect true
             :msg ":Unauthorized command (already registered)"})))
 
-(defn quit [channel quit-msg close-channel?]
-  (let [chan-future-agent (send-to-client* channel
-                                           (format ":%s QUIT :Client Quit"
-                                                   (format-client channel)))]
-    (await chan-future-agent)
-    (run-hook 'quit-hook channel "Client Quit")
-    (when close-channel?
-      (when-let [chan-future @chan-future-agent]
-        (.addListener chan-future (ChannelFutureListener/CLOSE))))))
+(defn quit [channel quit-msg close-channel? send-to-self? send-to-others?]
+  (let [msg (format ":%s QUIT :Client Quit"
+                    (format-client channel))]
+    (when send-to-others?
+      (send-to-clients-in-rooms-for-nick
+       (nick-for-channel channel) msg channel))
+    (let [chan-future-agent (and
+                             send-to-self?
+                             (send-to-client* channel msg))]
+      (when chan-future-agent
+        (await chan-future-agent))
+      (when send-to-others?
+        (run-hook 'quit-hook channel "Client Quit"))
+      (when close-channel?
+        (when-let [chan-future @chan-future-agent]
+          (.addListener chan-future (ChannelFutureListener/CLOSE)))))))
 
 (defcommand quit [channel quit-msg]
-  (quit channel quit-msg true))
+  (quit channel quit-msg true true false))
 
 (defcommand join [channel args]
   (let [[rooms keys extra-args] (.split args " ")]

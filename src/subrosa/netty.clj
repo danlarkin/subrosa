@@ -97,8 +97,8 @@
   (when (and (instance? ChannelStateEvent evt)
              (= (.getState evt) (ChannelState/CONNECTED))
              (not (.getValue evt)))
-    (when (.isConnected (.getChannel evt))
-      (quit (.getChannel evt) "Client Disconnect" false))
+    (quit (.getChannel evt) ":Client Disconnect" false
+          (.isConnected (.getChannel evt)) true)
     (dosync
      (remove-channel! (.getChannel evt))))
   evt)
