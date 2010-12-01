@@ -80,15 +80,15 @@
 (defn send-welcome [channel]
   (send-to-client channel 1
                   (format
-                   "Welcome to the Internet Relay Network %s"
+                   ":Welcome to the Internet Relay Network %s"
                    (nick-for-channel channel)))
   (send-to-client channel 2
                   (format
-                   "Your host is %s, running version %s"
+                   ":Your host is %s, running version %s"
                    (hostname)
                    (:version server)))
   (send-to-client channel 3
-                  (format "This server was created %s" (:started server)))
+                  (format ":This server was created %s" (:started server)))
   (send-to-client channel 4
                   (format "%s %s mMvV bcdefFhiIklmnoPqstv"
                           (hostname)
