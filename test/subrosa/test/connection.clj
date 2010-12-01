@@ -151,6 +151,21 @@
       (transmit s2 "WHOIS dan")
       (is (received? s2 #"401 dan2 dan :No such nick/channel")))))
 
+(deftest disconnect-produces-quit
+  (with-connection s1
+    (with-connection s2
+      (transmit s1 "NICK dan")
+      (transmit s1 "USER dan 0 * :Dan Larkin")
+      (transmit s1 "JOIN #foo")
+      (is (received? s1 #"Welcome to the .* dan$"))
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (is (received? s2 #"Welcome to the .* dan2$"))
+      (.close (:socket s1))
+      (Thread/sleep 1000)
+      (transmit s2 "WHOIS dan")
+      (is (received? s2 #"401 dan2 dan :No such nick/channel")))))
+
 (deftest pass-command-success
   (with-var-root [config (config-override {:password "foobar"})]
     (with-connection s

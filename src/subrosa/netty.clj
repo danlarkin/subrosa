@@ -4,7 +4,7 @@
                                send-to-client*]]
         [subrosa.config :only [config]]
         [subrosa.ssl :only [make-ssl-engine]]
-        [subrosa.commands :only [dispatch-message]]
+        [subrosa.commands :only [dispatch-message quit]]
         [subrosa.plugins :only [load-plugins]]
         [clojure.stacktrace :only [root-cause]])
   (:import [java.net InetSocketAddress]
@@ -97,6 +97,8 @@
   (when (and (instance? ChannelStateEvent evt)
              (= (.getState evt) (ChannelState/CONNECTED))
              (not (.getValue evt)))
+    (when (.isConnected (.getChannel evt))
+      (quit (.getChannel evt) "Client Disconnect" false))
     (dosync
      (remove-channel! (.getChannel evt))))
   evt)
