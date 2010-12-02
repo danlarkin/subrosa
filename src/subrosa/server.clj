@@ -19,7 +19,7 @@
 (defonce db (ref (make-subrosa-db)))
 
 (defonce server {:host (.getHostName (InetAddress/getLocalHost))
-                 :version "subrosa-1.0.0-SNAPSHOT"
+                 :version (.trim (slurp "version.txt"))
                  :started (Date.)})
 
 (defn reset-all-state! []
