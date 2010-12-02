@@ -64,10 +64,10 @@
          (maybe-update-authentication! channel))
         (raise {:type :client-error
                 :code 433
-                :msg ":Nickname is already in use"}))
+                :msg (format "%s :Nickname is already in use" nick)}))
       (raise {:type :client-error
               :code 432
-              :msg ":Erroneous nickname"}))
+              :msg (format "%s :Erroneous nickname" nick)}))
     (raise {:type :client-error
             :code 431
             :msg ":No nickname given"})))
