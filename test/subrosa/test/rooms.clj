@@ -47,7 +47,7 @@
     (transmit s "NICK dan")
     (transmit s "USER dan 0 * :Dan Larkin")
     (transmit s "TOPIC")
-    (is (received? s #":Not enough parameters"))
+    (is (received? s #"TOPIC :Not enough parameters"))
     (transmit s "TOPIC #notachannel")
     (is (received? s #":No such channel"))
     (transmit s "JOIN #foo")

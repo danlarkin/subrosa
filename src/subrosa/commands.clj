@@ -171,7 +171,7 @@
               (run-hook 'topic-hook channel room-name old-topic new-topic))
             (raise {:type :client-error
                     :code 461
-                    :msg (format "% :Not enough parameters")}))
+                    :msg (format "TOPIC :Not enough parameters")}))
           (if-let [topic (topic-for-room room-name)]
             (send-to-client channel 332
                             (format "%s :%s" room-name topic))
@@ -225,7 +225,6 @@
     (raise {:type :client-error
             :code 409
             :msg ":No origin specified"})))
-
 
 (defcommand whois [channel username]
   (if-not (empty? username)
