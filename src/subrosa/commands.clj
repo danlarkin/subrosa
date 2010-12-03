@@ -1,13 +1,11 @@
 (ns subrosa.commands
   (:use [subrosa.client]
-        [subrosa.hooks :only [reset-get-hook! add-hook hooked? run-hook]]
+        [subrosa.hooks :only [add-hook hooked? run-hook]]
         [subrosa.utils :only [interleave-all]]
         [subrosa.config :only [config]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
-
-(reset-get-hook!)
 
 (defn dispatch-message [message channel]
   (let [[cmd args] (seq (.split message " " 2))]
@@ -30,12 +28,12 @@
 (defmacro defcommand*
   "Define a command which can be called by unauthenticated users."
   [cmd & fn-tail]
-  `(add-hook '~cmd (fn ~@(fix-args false fn-tail))))
+  `(add-hook ::commands '~cmd (fn ~@(fix-args false fn-tail))))
 
 (defmacro defcommand
   "Define a command which requires its user to be authenticated."
   [cmd & fn-tail]
-  `(add-hook '~cmd (fn ~@(fix-args true fn-tail))))
+  `(add-hook ::commands '~cmd (fn ~@(fix-args true fn-tail))))
 
 (defn valid-nick-character? [character]
   (and (not (Character/isWhitespace character))

@@ -66,9 +66,8 @@
   (when (config :logging :directory)
     (apply log-dispatch args)))
 
-(add-hook 'privmsg-room-hook log)
-(add-hook 'join-hook log)
-(add-hook 'part-hook log)
-(add-hook 'quit-hook log)
-(add-hook 'nick-hook log)
-
+(add-hook ::logging 'privmsg-room-hook log)
+(add-hook ::logging 'join-hook log)
+(add-hook ::logging 'part-hook log)
+(add-hook ::logging 'quit-hook log)
+(add-hook ::logging 'nick-hook log)
