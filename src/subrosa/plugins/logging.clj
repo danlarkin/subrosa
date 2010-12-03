@@ -62,6 +62,11 @@
     (append room-name
             (format "--- nick: %s is now known as %s" old-nick new-nick))))
 
+(defmethod log-dispatch 'topic-hook [hook channel room-name old-topic new-topic]
+  (append room-name
+          (format "--- topic: %s set the topic to \"%s\""
+                  (nick-for-channel channel) new-topic)))
+
 (defn log [& args]
   (when (config :logging :directory)
     (apply log-dispatch args)))
@@ -71,3 +76,4 @@
 (add-hook ::logging 'part-hook log)
 (add-hook ::logging 'quit-hook log)
 (add-hook ::logging 'nick-hook log)
+(add-hook ::logging 'topic-hook log)

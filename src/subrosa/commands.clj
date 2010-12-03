@@ -157,12 +157,15 @@
       (if (room-for-name room-name)
         (if topic
           (if (valid-topic? topic)
-            (dosync
-             (set-topic-for-room! room-name (subs topic 1))
-             (send-to-room room-name (format ":%s TOPIC %s :%s"
-                                             (format-client channel)
-                                             room-name
-                                             (subs topic 1))))
+            (let [old-topic (topic-for-room room-name)
+                  new-topic (subs topic 1)]
+              (dosync
+               (set-topic-for-room! room-name new-topic)
+               (send-to-room room-name (format ":%s TOPIC %s :%s"
+                                               (format-client channel)
+                                               room-name
+                                               new-topic)))
+              (run-hook 'topic-hook channel room-name old-topic new-topic))
             (raise {:type :client-error
                     :code 461
                     :msg (format "% :Not enough parameters")}))
