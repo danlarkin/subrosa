@@ -12,11 +12,12 @@
     (if (hooked? cmd)
       (run-hook cmd channel (or args ""))
       (do
-        (println "Received unhandled command:" message)
-        (when (authenticated? channel)
-          (raise {:type :client-error
-                  :code 421
-                  :msg (format "%s :Unknown command" cmd)}))))))
+        (when-not (empty? message)
+          (println "Received unhandled command:" message)
+          (when (authenticated? channel)
+            (raise {:type :client-error
+                    :code 421
+                    :msg (format "%s :Unknown command" cmd)})))))))
 
 (defn fix-args
   [require-auth? fn-tail]
