@@ -1,4 +1,4 @@
-(defproject subrosa (.trim (slurp "version.txt"))
+(defproject subrosa (.trim (slurp "etc/version.txt"))
   :main subrosa.main
   :resources-path "etc"
   :repositories {"jboss"
