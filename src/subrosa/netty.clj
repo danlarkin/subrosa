@@ -66,7 +66,8 @@
             (.addListener chan-future (ChannelFutureListener/CLOSE)))))
       (when (not (some #{(class (root-cause evt))}
                        #{java.io.IOException
-                         java.nio.channels.ClosedChannelException}))
+                         java.nio.channels.ClosedChannelException
+                         javax.net.ssl.SSLException}))
         (println up-or-down "ERROR")
         (.printStackTrace (root-cause evt)))))
   evt)
