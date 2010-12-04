@@ -287,3 +287,6 @@
         (raise {:type :client-error
                 :code 461
                 :msg "PART :Not enough parameters"})))))
+
+(defcommand motd [channel args]
+  (send-motd channel))

@@ -94,6 +94,9 @@
                           (hostname)
                           (:version server))))
 
+(defn send-motd [channel]
+  (send-to-client channel 422 ":MOTD File is missing"))
+
 (defn get-required-authentication-steps []
   (if (config :password)
     #{"NICK" "USER" "PASS"}
@@ -106,7 +109,8 @@
         (when (= (:pending? user) (get-required-authentication-steps))
           (alter db remove-tuple :user user)
           (alter db add-tuple :user (assoc user :pending? nil))
-          (send-welcome channel))
+          (send-welcome channel)
+          (send-motd channel))
         (raise {:type :protocol-error
                 :disconnect true
                 :msg ":Bad Password"})))))
