@@ -252,14 +252,16 @@
             :msg ":No nickname given"})))
 
 (defcommand list [channel rooms]
-  (let [rooms (if (empty? rooms)
-                (all-rooms)
-                (.split rooms ","))]
-    (doseq [room rooms]
-      (send-to-client channel 322 (format "%s 0 :%s"
-                                          room
-                                          (or (topic-for-room room) ""))))
-    (send-to-client channel 323 ":End of LIST")))
+  (when-not (= rooms "STOP")
+    (let [rooms (if (empty? rooms)
+                  (all-rooms)
+                  (.split rooms ","))]
+      (doseq [room rooms]
+        (send-to-client channel 322 (format "%s %s :%s"
+                                            room
+                                            (count (nicks-in-room room))
+                                            (or (topic-for-room room) ""))))
+      (send-to-client channel 323 ":End of LIST"))))
 
 (defcommand part [channel command]
   (let [[rooms-string part-message] (.split command ":" 2)
