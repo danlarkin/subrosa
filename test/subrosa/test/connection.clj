@@ -212,3 +212,37 @@
       (transmit s "NICK dan")
       (transmit s "USER dan 0 * :Dan Larkin")
       (is (received? s #"ERROR :Bad Password")))))
+
+(deftest who-command-no-args
+  (with-connection s
+    (transmit s "NICK superdan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "WHO")
+    (is (received? s #"352 superdan \* dan .* .* superdan H :0 Dan Larkin"))
+    (is (received? s #"315 superdan \* :End of WHO list"))
+    (with-connection s2
+      (transmit s2 "NICK awesomedan")
+      (transmit s2 "USER dan2 0 * :Dan Larkin2")
+      (transmit s2 "WHO")
+      (is (received?
+           s2 #"352 awesomedan \* dan .* .* superdan H :0 Dan Larkin"))
+      (is (received?
+           s2 #"352 awesomedan \* dan2 .* .* awesomedan H :0 Dan Larkin2"))
+      (is (received? s2 #"315 awesomedan \* :End of WHO list")))))
+
+(deftest who-command-for-an-empty-channel
+  (with-connection s
+    (transmit s "NICK superdan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "WHO #foo")
+    (is (not-received? s #"352"))
+    (is (received? s #"315 superdan \#foo :End of WHO list"))))
+
+(deftest who-command-for-a-populated-channel
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER danismyname 0 * :Dan Larkin")
+    (transmit s "JOIN #foo")
+    (transmit s "WHO #foo")
+    (is (received? s #"352 dan #foo danismyname .* .* dan H :0 Dan Larkin"))
+    (is (received? s #"315 dan #foo :End of WHO list"))))

@@ -288,3 +288,23 @@
 
 (defcommand motd [channel args]
   (send-motd channel))
+
+(defcommand who [channel room-name]
+  (let [room-name-for-reply (if (empty? room-name)
+                              "*"
+                              room-name)
+        users (map user-for-nick (if (empty? room-name)
+                                   (all-nicks)
+                                   (nicks-in-room room-name)))]
+    (doseq [{:keys [nick real-name user-name] :as user} users]
+      (send-to-client channel 352 (format "%s %s %s %s %s H :0 %s"
+                                          (if (= room-name-for-reply "*")
+                                            room-name-for-reply
+                                            (first (rooms-for-nick nick)))
+                                          user-name
+                                          (format-hostname (:channel user))
+                                          (hostname)
+                                          nick
+                                          real-name)))
+    (send-to-client channel 315 (format "%s :End of WHO list"
+                                        room-name-for-reply))))
