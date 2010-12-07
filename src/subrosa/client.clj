@@ -120,17 +120,20 @@
     (alter db remove-tuple :user user)
     (alter db add-tuple :user (assoc user
                                 :user-name user-name
-                                :real-name real-name))))
+                                :real-name (subs real-name 1)))))
+
+(defn format-hostname [channel]
+  (-> channel
+      .getRemoteAddress
+      .getAddress
+      .getCanonicalHostName))
 
 (defn format-client [channel]
   (let [nick (nick-for-channel channel)]
     (format "%s!%s@%s"
             nick
             (:user-name (user-for-nick nick))
-            (-> channel
-                .getRemoteAddress
-                .getAddress
-                .getCanonicalHostName))))
+            (format-hostname channel))))
 
 (defn nick-in-room? [nick room-name]
   (first (select @db :user-in-room {:user-nick nick

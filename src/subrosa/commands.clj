@@ -233,10 +233,8 @@
             user-name (:user-name user)
             real-name (:real-name user)
             rooms (rooms-for-nick nick)
-            hostname (-> channel
-                         (.getLocalAddress)
-                         (.getHostName))]
-        (send-to-client channel 311 (format "%s %s * %s"
+            hostname (format-hostname (:channel user))]
+        (send-to-client channel 311 (format "%s %s * :%s"
                                             user-name
                                             hostname
                                             real-name))
