@@ -65,26 +65,35 @@
 (defn found? [pattern lines]
   (some (partial re-find pattern) lines))
 
-(defn expect
-  ([socket pattern] (expect socket pattern (or *timeout* 0)))
-  ([socket pattern timeout]
-     (.setSoTimeout (:socket socket) timeout)
-     (let [in (:in socket)]
-       (loop [line (socket-read-line in)]
-         (swap! (:received socket) conj (if (= :timeout line)
-                                          ""
-                                          line))
-         (if (found? pattern @(:received socket))
-           true
-           (if (= :timeout line)
-             (join "\n" @(:received socket))
-             (recur (socket-read-line in))))))))
+(defn expect [socket pattern found-pred]
+  (.setSoTimeout (:socket socket) *timeout*)
+  (let [in (:in socket)]
+    (loop [line (socket-read-line in)]
+      (swap! (:received socket) conj (if (= :timeout line)
+                                       ""
+                                       line))
+      (if (found-pred (found? pattern @(:received socket)))
+        true
+        (if (= :timeout line)
+          (join "\n" @(:received socket))
+          (recur (socket-read-line in)))))))
 
 (defmethod assert-expr 'received? [msg form]
   (let [socket (nth form 1)
         string (nth form 2)]
     `(do
-       (let [v# (expect ~socket ~string)]
+       (let [v# (expect ~socket ~string identity)]
+         (if (true? v#)
+           (report {:type :pass :message ~msg
+                    :expected ~string :actual v#})
+           (report {:type :fail :message ~msg
+                    :expected ~string :actual v#}))))))
+
+(defmethod assert-expr 'not-received? [msg form]
+  (let [socket (nth form 1)
+        string (nth form 2)]
+    `(do
+       (let [v# (expect ~socket ~string not)]
          (if (true? v#)
            (report {:type :pass :message ~msg
                     :expected ~string :actual v#})
