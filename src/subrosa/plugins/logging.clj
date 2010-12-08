@@ -1,6 +1,6 @@
 (ns subrosa.plugins.logging
   (:use [subrosa.hooks :only [add-hook]]
-        [subrosa.client]
+        [subrosa.client :exclude [io-agent]]
         [subrosa.config :only [config]])
   (:import [java.util Date]
            [java.text SimpleDateFormat]

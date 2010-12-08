@@ -4,6 +4,8 @@
         [subrosa.server]
         [subrosa.config :only [config]]))
 
+(def io-agent (agent nil))
+
 (defn user-for-channel [channel]
   (if-let [user (first (select @db :user {:channel channel}))]
     user
@@ -65,7 +67,7 @@
 
 (defn send-to-client* [channel msg]
   (when (.isWritable channel)
-    (send (agent nil)
+    (send io-agent
           (fn [_] (io! (.write channel (str msg "\n")))))))
 
 (defn send-to-client
