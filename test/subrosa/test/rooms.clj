@@ -120,6 +120,7 @@
       (transmit s "JOIN #foo2")
       (transmit s2 "JOIN #foo")
       (transmit s "TOPIC #foo2 :new topic")
+      (Thread/sleep 500) ; give time for all rooms to be created
       (transmit s "LIST")
       (is (received? s #"322 dan #foo2 1 :new topic$"))
       (is (received? s #"322 dan #foo 2 :$"))
