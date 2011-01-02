@@ -8,14 +8,11 @@
 
 (def io-agent (agent nil))
 
-(def time-formatter (SimpleDateFormat. "HH:mm:ss"))
-(def date-formatter (SimpleDateFormat. "yyyy-MM-dd"))
-
 (defn format-date []
-  (.format date-formatter (Date.)))
+  (.format (SimpleDateFormat. "yyyy-MM-dd") (Date.)))
 
 (defn format-time []
-  (.format time-formatter (Date.)))
+  (.format (SimpleDateFormat. "HH:mm:ss") (Date.)))
 
 (defn get-log-name [room-name]
   (let [log-dir (File. (System/getProperty "user.dir")
