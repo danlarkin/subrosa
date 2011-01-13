@@ -14,7 +14,10 @@
 
    (relation :user-in-room [:user-nick :room-name])
    (index :user-in-room :user-nick)
-   (index :user-in-room :room-name)))
+   (index :user-in-room :room-name)
+
+   (relation :message [:time :text])
+   (index :time :text)))
 
 (defonce db (ref (make-subrosa-db)))
 
