@@ -2,7 +2,8 @@
   (:use [clojure.contrib.datalog.database :only [add-tuple remove-tuple select]]
         [clojure.contrib.condition :only [raise]]
         [subrosa.server]
-        [subrosa.config :only [config]]))
+        [subrosa.config :only [config]])
+  (:import [java.util Date]))
 
 (def io-agent (agent nil))
 
@@ -98,6 +99,18 @@
 
 (defn send-motd [channel]
   (send-to-client channel 422 ":MOTD File is missing"))
+
+(defn add-catchup-log [nick room msg]
+  (dosync
+   (alter db add-tuple :message
+          {:time (.getTime (Date.))
+           :room room
+           :text (format "%s: %s" nick msg)})))
+
+(defn send-catchup-log [channel]
+  (doseq [msg (remove nil? (map :text (select @db :message nil)))]
+    (send-to-client channel 999 msg))
+  (send-to-client channel 999 ":End of catchup"))
 
 (defn get-required-authentication-steps []
   (if (config :password)
