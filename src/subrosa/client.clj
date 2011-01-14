@@ -101,23 +101,21 @@
 (defn send-motd [channel]
   (send-to-client channel 422 ":MOTD File is missing"))
 
-(defn expired-catchup-msg? [msg]
-  (let [now (.getTime (Date.))
-        m-time (:time msg)
-        diff (- now m-time)]
-    ;; TODO: make this a config value
-    (> diff (* 60 60 24))))
+(defn get-expired-messages [msgs]
+  (let [db-msg-count (count msgs)]
+    (when (> db-msg-count (config :catchup-retention))
+      (take (- db-msg-count (config :catchup-retention)) msgs))))
 
 ;; TODO: don't do balancing for every new message, since it's
-;; unnecessary overhead, do it once a <retention_time> instead
+;; unnecessary overhead, do it once in a while instead
 (defn balance-catchup-log [nick room msg]
   (dosync
    (alter db add-tuple :message
           {:time (.getTime (Date.))
            :room room
            :text (format "%s: %s" nick msg)}))
-  (let [msgs (select @db :message nil)
-        expired-msgs (filter expired-catchup-msg? msgs)]
+  (let [msgs (sort-by :time (select @db :message nil))
+        expired-msgs (get-expired-messages msgs)]
     ;; A message may be put in between the filtering and removing
     ;; action, but it's an un-important edge case
     (dosync
@@ -133,9 +131,9 @@
        (remove nil?)
        doall))
 
-(defn send-catchup-log [channel args]
+(defn get-catchup-log [channel args]
   (let [user (user-for-channel channel)
-;;        _ (println :user (str user))
+        ;; _ (println :user (str user))
         login-time (if (and args (> (count args) 0))
                      (try (long (Long/parseLong args))
                           (catch NumberFormatException _
@@ -143,13 +141,11 @@
                                     :code 998
                                     :msg ":Bad Catchup Time"})))
                      (:login-time user))
-;;        _ (println :login-time (str login-time))
+        ;; _ (println :login-time (str login-time))
         msgs (messages-since login-time)
-;;        _ (println :msgs (str (seq msgs)))
+        ;; _ (println :msgs (str (seq msgs)))
         ]
-    (doseq [msg msgs]
-      (send-to-client channel 999 msg)))
-  (send-to-client channel 999 ":End of catchup"))
+    msgs))
 
 (defn get-required-authentication-steps []
   (if (config :password)

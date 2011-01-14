@@ -314,4 +314,9 @@
                                         room-name-for-reply))))
 
 (defcommand catchup [channel args]
-  (send-catchup-log channel args))
+  (let [msgs (get-catchup-log channel args)
+        end (format "PRIVMSG %s :End of catchup" (nick-for-channel channel))]
+    (doseq [msg-text msgs]
+      (let [m (format "PRIVMSG %s :%s" (nick-for-channel channel) msg-text)]
+        (dispatch-message m channel)))
+    (dispatch-message end channel)))
