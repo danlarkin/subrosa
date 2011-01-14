@@ -3,7 +3,8 @@
         [clojure.contrib.condition :only [raise]]
         [subrosa.server]
         [subrosa.config :only [config]])
-  (:import [java.util Date]))
+  (:import [java.util Date]
+           [java.text SimpleDateFormat]))
 
 (def io-agent (agent nil))
 
@@ -106,6 +107,9 @@
     (when (> db-msg-count (config :catchup-retention))
       (take (- db-msg-count (config :catchup-retention)) msgs))))
 
+(defn format-catchup-time [seconds]
+  (.format (SimpleDateFormat. "HH:mm:ss") (Date. seconds)))
+
 ;; TODO: don't do balancing for every new message, since it's
 ;; unnecessary overhead, do it once in a while instead
 (defn balance-catchup-log [nick room msg]
@@ -113,7 +117,8 @@
    (alter db add-tuple :message
           {:time (.getTime (Date.))
            :room room
-           :text (format "%s: %s" nick msg)}))
+           :text (str msg)
+           :nick nick}))
   (let [msgs (sort-by :time (select @db :message nil))
         expired-msgs (get-expired-messages msgs)]
     ;; A message may be put in between the filtering and removing
@@ -122,18 +127,25 @@
      (doseq [m expired-msgs]
        (alter db remove-tuple :message m)))))
 
-(defn messages-since [login-time]
+;; Format used by catchup for the private user to see the logs in
+(def catchup-format "%s: <%s> %s")
+
+(defn messages-since
+  "Given a time that a client logged in, return the messages they missed"
+  [login-time]
   (println "Messages since:" login-time)
   (->> (select @db :message nil)
        (filter (fn [m] (or (= login-time 0)
                           (< (:time m) login-time))))
-       (map :text)
+       (map (fn [m] (format catchup-format
+                           (format-catchup-time (:time m))
+                           (:nick m)
+                           (:text m))))
        (remove nil?)
        doall))
 
 (defn get-catchup-log [channel args]
   (let [user (user-for-channel channel)
-        ;; _ (println :user (str user))
         login-time (if (and args (> (count args) 0))
                      (try (long (Long/parseLong args))
                           (catch NumberFormatException _
