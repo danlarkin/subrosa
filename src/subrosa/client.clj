@@ -139,7 +139,7 @@
         login-time (if (and args (> (count args) 0))
                      (try (long (Long/parseLong args))
                           (catch NumberFormatException _
-                            (raise {:type :protocol-error
+                            (raise {:type :client-error
                                     :code 998
                                     :msg ":Bad Catchup Time"})))
                      (:login-time user))
