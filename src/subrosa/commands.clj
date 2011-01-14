@@ -319,4 +319,4 @@
     (doseq [msg-text msgs]
       (let [m (format "PRIVMSG %s :%s" (nick-for-channel channel) msg-text)]
         (dispatch-message m channel)))
-    (dispatch-message end channel)))
+    (when (> (count msgs) 0)) (dispatch-message end channel)))
