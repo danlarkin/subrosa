@@ -131,10 +131,12 @@
 (def catchup-format "%s: <%s> %s")
 
 (defn messages-since
-  "Given a time that a client logged in, return the messages they missed"
-  [login-time]
+  "Given a time that a client logged in, return the messages they missed
+  for a given room"
+  [login-time room]
   (println "Messages since:" login-time)
   (->> (select @db :message nil)
+       (filter (fn [m] (= room (:room m))))
        (filter (fn [m] (or (= login-time 0)
                           (< (:time m) login-time))))
        (map (fn [m] (format catchup-format
@@ -144,18 +146,22 @@
        (remove nil?)
        doall))
 
-(defn get-catchup-log [channel args]
+(defn get-catchup-log [channel room time]
+  (when-not (and room (> (count room) 0))
+    (raise {:type :client-error
+            :code 999
+            :msg ":Bad Catchup Room"}))
   (let [user (user-for-channel channel)
-        login-time (if (and args (> (count args) 0))
-                     (try (long (Long/parseLong args))
+        login-time (if (and time (> (count time) 0))
+                     (try (long (Long/parseLong time))
                           (catch NumberFormatException _
                             (raise {:type :client-error
                                     :code 998
                                     :msg ":Bad Catchup Time"})))
                      (:login-time user))
-        ;; _ (println :login-time (str login-time))
-        msgs (messages-since login-time)
-        ;; _ (println :msgs (str (seq msgs)))
+        ;;_ (println :login-time (str login-time))
+        msgs (messages-since login-time room)
+        ;;_ (println :msgs (str (seq msgs)))
         ]
     msgs))
 
