@@ -5,7 +5,7 @@
 
 (defn make-subrosa-db []
   (make-database
-   (relation :user [:nick :real-name :user-name :channel :pending?])
+   (relation :user [:nick :real-name :user-name :channel :pending? :login-time])
    (index :user :nick)
    (index :user :channel)
 

@@ -33,7 +33,8 @@
           :real-name nil
           :user-name nil
           :channel channel
-          :pending? #{}}))
+          :pending? #{}
+          :login-time (.getTime (Date.))}))
 
 (defn remove-channel! [channel]
   (let [user (user-for-channel channel)
@@ -123,9 +124,25 @@
      (doseq [m expired-msgs]
        (alter db remove-tuple :message m)))))
 
+(defn messages-since [login-time]
+  (println "Messages since:" login-time)
+  (->> (select @db :message nil)
+       (filter (fn [m] (or (= login-time 0)
+                          (< (:time m) login-time))))
+       (map :text)
+       (remove nil?)
+       doall))
+
 (defn send-catchup-log [channel]
-  (doseq [msg (remove nil? (map :text (select @db :message nil)))]
-    (send-to-client channel 999 msg))
+  (let [user (user-for-channel channel)
+;;        _ (println :user (str user))
+        login-time (:login-time user)
+;;        _ (println :login-time (str login-time))
+        msgs (messages-since login-time)
+;;        _ (println :msgs (str (seq msgs)))
+        ]
+    (doseq [msg msgs]
+      (send-to-client channel 999 msg)))
   (send-to-client channel 999 ":End of catchup"))
 
 (defn get-required-authentication-steps []
@@ -151,7 +168,8 @@
     (alter db remove-tuple :user user)
     (alter db add-tuple :user (assoc user
                                 :user-name user-name
-                                :real-name (subs real-name 1)))))
+                                :real-name (subs real-name 1)
+                                :login-time (.getTime (Date.))))))
 
 (defn format-hostname [channel]
   (-> channel
