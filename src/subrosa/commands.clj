@@ -313,5 +313,5 @@
     (send-to-client channel 315 (format "%s :End of WHO list"
                                         room-name-for-reply))))
 
-(defcommand catchup [channel room-name]
-  (send-catchup-log channel))
+(defcommand catchup [channel args]
+  (send-catchup-log channel args))

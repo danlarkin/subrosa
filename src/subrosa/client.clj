@@ -133,10 +133,12 @@
        (remove nil?)
        doall))
 
-(defn send-catchup-log [channel]
+(defn send-catchup-log [channel args]
   (let [user (user-for-channel channel)
 ;;        _ (println :user (str user))
-        login-time (:login-time user)
+        login-time (if (and args (> (count args) 0))
+                     (long (Long/parseLong args))
+                     (:login-time user))
 ;;        _ (println :login-time (str login-time))
         msgs (messages-since login-time)
 ;;        _ (println :msgs (str (seq msgs)))
