@@ -137,7 +137,11 @@
   (let [user (user-for-channel channel)
 ;;        _ (println :user (str user))
         login-time (if (and args (> (count args) 0))
-                     (long (Long/parseLong args))
+                     (try (long (Long/parseLong args))
+                          (catch NumberFormatException _
+                            (raise {:type :protocol-error
+                                    :code 998
+                                    :msg ":Bad Catchup Time"})))
                      (:login-time user))
 ;;        _ (println :login-time (str login-time))
         msgs (messages-since login-time)
