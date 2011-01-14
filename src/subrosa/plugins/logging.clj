@@ -31,7 +31,7 @@
 (defmulti log-dispatch (fn [& args] (first args)))
 
 (defmethod log-dispatch 'privmsg-room-hook [hook channel room-name msg]
-  (add-catchup-log (nick-for-channel channel) room-name msg)
+  (balance-catchup-log (nick-for-channel channel) room-name msg)
   (append room-name (format "<%s> %s" (nick-for-channel channel) msg)))
 
 (defmethod log-dispatch 'join-hook [hook channel room-name]

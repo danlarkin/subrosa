@@ -100,12 +100,28 @@
 (defn send-motd [channel]
   (send-to-client channel 422 ":MOTD File is missing"))
 
-(defn add-catchup-log [nick room msg]
+(defn expired-catchup-msg? [msg]
+  (let [now (.getTime (Date.))
+        m-time (:time msg)
+        diff (- now m-time)]
+    ;; TODO: make this a config value
+    (> diff (* 60 60 24))))
+
+;; TODO: don't do balancing for every new message, since it's
+;; unnecessary overhead, do it once a <retention_time> instead
+(defn balance-catchup-log [nick room msg]
   (dosync
    (alter db add-tuple :message
           {:time (.getTime (Date.))
            :room room
-           :text (format "%s: %s" nick msg)})))
+           :text (format "%s: %s" nick msg)}))
+  (let [msgs (select @db :message nil)
+        expired-msgs (filter expired-catchup-msg? msgs)]
+    ;; A message may be put in between the filtering and removing
+    ;; action, but it's an un-important edge case
+    (dosync
+     (doseq [m expired-msgs]
+       (alter db remove-tuple :message m)))))
 
 (defn send-catchup-log [channel]
   (doseq [msg (remove nil? (map :text (select @db :message nil)))]
