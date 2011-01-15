@@ -150,7 +150,7 @@
    ["Herodotus" "Thucydides" "Berossus" "Xenophon" "Ptolemy" "Timaeus" "Quintus"
     "Gaius" "Polybius" "Sima Qian" "Diodorus Siculus" "Sallust" "Ban Gu"
     "Flavius Josephus" "Ban Zhao" "Thallus" "Plutarch" "Suetonius" "Appian"
-    "Arrian" "Lucius Ampelius" "Dio-Cassius" "Herodian" "Ammianus Marcellinus"
+    "Arrian" "Lucius Ampelius" "Dio Cassius" "Herodian" "Ammianus Marcellinus"
     "Philostorgius" "Fa Hien" "Theodoret" "Priscus" "Sozomen" "Salvian"]))
 
 (defn filter-catchup-messages
