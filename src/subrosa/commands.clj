@@ -315,9 +315,10 @@
 
 (defcommand catchup [channel args]
   (let [[room time] (.split args " " 2)
-        _ (println :room room :time time)
         msgs (get-catchup-log channel room time)
+        start (format "PRIVMSG %s :%s sez:" (nick-for-channel channel) (catchup-name))
         end (format "PRIVMSG %s :End of catchup" (nick-for-channel channel))]
+    (when (> (count msgs) 0)) (dispatch-message start channel)
     (doseq [msg-text msgs]
       (let [m (format "PRIVMSG %s :%s" (nick-for-channel channel) msg-text)]
         (dispatch-message m channel)))

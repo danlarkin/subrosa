@@ -130,6 +130,14 @@
 ;; Format used by catchup for the private user to see the logs in
 (def catchup-format "%s: <%s> %s")
 
+(defn catchup-name []
+  (rand-nth
+   ["Herodotus" "Thucydides" "Berossus" "Xenophon" "Ptolemy" "Timaeus" "Quintus"
+    "Gaius" "Polybius" "Sima Qian" "Diodorus Siculus" "Sallust" "Ban-Gu"
+    "Flavius Josephus" "Ban-Zhao" "Thallus" "Plutarch" "Suetonius" "Appian"
+    "Arrian" "Lucius Ampelius" "Dio-Cassius" "Herodian" "Ammianus Marcellinus"
+    "Philostorgius" "Fa Hien" "Theodoret" "Priscus" "Sozomen" "Salvian"]))
+
 (defn messages-since
   "Given a time that a client logged in, return the messages they missed
   for a given room"
