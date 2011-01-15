@@ -110,6 +110,8 @@
 (defn format-catchup-time [seconds]
   (.format (SimpleDateFormat. "HH:mm:ss") (Date. seconds)))
 
+(def balance-timer (atom (config :catchup-balance-size)))
+
 ;; TODO: don't do balancing for every new message, since it's
 ;; unnecessary overhead, do it once in a while instead
 (defn balance-catchup-log [nick room msg]
@@ -119,13 +121,17 @@
            :room room
            :text (str msg)
            :nick nick}))
-  (let [msgs (sort-by :time (select @db :message nil))
-        expired-msgs (get-expired-messages msgs)]
-    ;; A message may be put in between the filtering and removing
-    ;; action, but it's an un-important edge case
-    (dosync
-     (doseq [m expired-msgs]
-       (alter db remove-tuple :message m)))))
+  ;; Decrement timer
+  (swap! balance-timer dec)
+  (when (<= @balance-timer 0)
+    (let [msgs (sort-by :time (select @db :message nil))
+          expired-msgs (get-expired-messages msgs)]
+      ;; A message may be put in between the filtering and removing
+      ;; action, but it's an un-important edge case
+      (dosync
+       (doseq [m expired-msgs]
+         (alter db remove-tuple :message m))))
+    (reset! balance-timer (config :catchup-balance-size))))
 
 ;; Format used by catchup for the private user to see the logs in
 (def catchup-format "%s: <%s> %s")
