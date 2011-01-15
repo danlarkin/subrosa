@@ -102,19 +102,25 @@
 (defn send-motd [channel]
   (send-to-client channel 422 ":MOTD File is missing"))
 
-(defn get-expired-messages [msgs]
+(defn get-expired-messages
+  "Return the messages that are expired, expects the messages to be
+  passed in sorted."
+  [msgs]
   (let [db-msg-count (count msgs)]
     (when (> db-msg-count (config :catchup-retention))
       (take (- db-msg-count (config :catchup-retention)) msgs))))
 
-(defn format-catchup-time [seconds]
+(defn format-catchup-time
+  "Format the catchup message time to a human-readable format."
+  [seconds]
   (.format (SimpleDateFormat. "HH:mm:ss") (Date. seconds)))
 
 (def balance-timer (atom (config :catchup-balance-size)))
 
-;; TODO: don't do balancing for every new message, since it's
-;; unnecessary overhead, do it once in a while instead
-(defn balance-catchup-log [nick room msg]
+(defn add-and-balance-catchup-log
+  "Add the message to the catchup log and, if required, balance the log
+  to the retention size."
+  [nick room msg]
   (dosync
    (alter db add-tuple :message
           {:time (.getTime (Date.))
@@ -136,7 +142,10 @@
 ;; Format used by catchup for the private user to see the logs in
 (def catchup-format "%s: <%s> %s")
 
-(defn catchup-name []
+(defn catchup-name
+  "Taken from:
+  wikipedia.org/wiki/List_of_historians#Historians_of_the_Ancient_Period"
+  []
   (rand-nth
    ["Herodotus" "Thucydides" "Berossus" "Xenophon" "Ptolemy" "Timaeus" "Quintus"
     "Gaius" "Polybius" "Sima Qian" "Diodorus Siculus" "Sallust" "Ban Gu"
@@ -159,7 +168,10 @@
        (sort-by :time)
        doall))
 
-(defn get-catchup-log [channel room time]
+(defn get-catchup-log
+  "Retrieve the catchup messages for a given channel room and time. If time
+  is nil, use the login time of the user instead."
+  [channel room time]
   (when-not (and room (> (count room) 0))
     (raise {:type :client-error
             :code 999
