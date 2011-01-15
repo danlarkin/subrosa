@@ -152,6 +152,7 @@
                            (:nick m)
                            (:text m))))
        (remove nil?)
+       (sort-by :time)
        doall))
 
 (defn get-catchup-log [channel room time]
