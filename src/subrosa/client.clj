@@ -138,30 +138,13 @@
     "Arrian" "Lucius Ampelius" "Dio-Cassius" "Herodian" "Ammianus Marcellinus"
     "Philostorgius" "Fa Hien" "Theodoret" "Priscus" "Sozomen" "Salvian"]))
 
-(defn messages-since
-  "Given a time that a client logged in, return the messages they missed
+(defn filter-catchup-messages
+  "Given a message filter function, return the messages they missed
   for a given room"
-  [time room]
+  [room msg-filter]
   (->> (select @db :message nil)
        (filter (fn [m] (= room (:room m))))
-       ;;((fn [m] (println :new time :msg m #_(- (:time m) time)) m))
-       (filter (fn [m] (or (= time 0)
-                          (> (:time m) time))))
-       (map (fn [m] (format catchup-format
-                           (format-catchup-time (:time m))
-                           (:nick m)
-                           (:text m))))
-       (remove nil?)
-       (sort-by :time)
-       doall))
-
-(defn messages-since-login
-  "Given a user, return the messages they missed for a given room"
-  [user room]
-  (->> (select @db :message nil)
-       (filter (fn [m] (= room (:room m))))
-       ;;((fn [m] (println :new time :msg m #_(- (:time m) time)) m))
-       (filter (fn [m] (< (:time m) (:login-time user))))
+       (filter msg-filter)
        (map (fn [m] (format catchup-format
                            (format-catchup-time (:time m))
                            (:nick m)
@@ -182,10 +165,16 @@
                       (raise {:type :client-error
                               :code 998
                               :msg ":Bad Catchup Time"}))))
-        ;;_ (println :time (str time))
+        ;; Filter messages by either a given time, or the time the
+        ;; user first logged into the system
         msgs (if time
-               (messages-since time room)
-               (messages-since-login user room))]
+               (filter-catchup-messages
+                room
+                (fn [m] (or (= time 0)
+                           (> (:time m) time))))
+               (filter-catchup-messages
+                room
+                (fn [m] (< (:time m) (:login-time user)))))]
     msgs))
 
 (defn get-required-authentication-steps []
