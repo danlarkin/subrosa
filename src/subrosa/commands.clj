@@ -5,7 +5,8 @@
         [subrosa.config :only [config]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
-  (:import [org.jboss.netty.channel ChannelFutureListener]))
+  (:import [org.jboss.netty.channel ChannelFutureListener])
+  (:import [java.util Date]))
 
 (defn dispatch-message [message channel]
   (let [[cmd args] (seq (.split message " " 2))]
@@ -313,13 +314,30 @@
     (send-to-client channel 315 (format "%s :End of WHO list"
                                         room-name-for-reply))))
 
+(defn- parse-offset-time [time]
+  (let [weeks (Integer/parseInt (or (last (re-find #"(\d+)w" time)) "0"))
+        days (Integer/parseInt (or (last (re-find #"(\d+)d" time)) "0"))
+        hours (Integer/parseInt (or (last (re-find #"(\d+)h" time)) "0"))
+        minutes (Integer/parseInt (or (last (re-find #"(\d+)m" time)) "0"))
+        seconds (Integer/parseInt (or (last (re-find #"(\d+)s" time)) "0"))
+        new-time (- (.getTime (Date.))
+                    (+ (* seconds 1000)
+                       (* minutes 1000  60)
+                       (* hours 1000 60 60)
+                       (* days 1000 60 60 24)
+                       (* weeks 1000 60 60 24 7)))]
+    (str (if (< new-time 0)
+           (.getTime (Date.))
+           new-time))))
+
 (defcommand catchup [channel args]
   (let [[room time] (.split args " " 2)
-        msgs (get-catchup-log channel room time)
+        offset-time (if time (parse-offset-time time) nil)
+        msgs (get-catchup-log channel room offset-time)
         start (format "PRIVMSG %s :%s sez:" (nick-for-channel channel) (catchup-name))
         end (format "PRIVMSG %s :End of catchup" (nick-for-channel channel))]
-    (when (> (count msgs) 0)) (dispatch-message start channel)
+    (when (> (count msgs) 0) (dispatch-message start channel))
     (doseq [msg-text msgs]
       (let [m (format "PRIVMSG %s :%s" (nick-for-channel channel) msg-text)]
         (dispatch-message m channel)))
-    (when (> (count msgs) 0)) (dispatch-message end channel)))
+    (when (> (count msgs) 0) (dispatch-message end channel))))
