@@ -155,23 +155,37 @@
        (sort-by :time)
        doall))
 
+(defn messages-since-login
+  "Given a user, return the messages they missed for a given room"
+  [user room]
+  (->> (select @db :message nil)
+       (filter (fn [m] (= room (:room m))))
+       ;;((fn [m] (println :new time :msg m #_(- (:time m) time)) m))
+       (filter (fn [m] (< (:time m) (:login-time user))))
+       (map (fn [m] (format catchup-format
+                           (format-catchup-time (:time m))
+                           (:nick m)
+                           (:text m))))
+       (remove nil?)
+       (sort-by :time)
+       doall))
+
 (defn get-catchup-log [channel room time]
   (when-not (and room (> (count room) 0))
     (raise {:type :client-error
             :code 999
             :msg ":Bad Catchup Room"}))
   (let [user (user-for-channel channel)
-        time (if (and time (> (count time) 0))
+        time (when (and time (> (count time) 0))
                (try (long (Long/parseLong time))
                     (catch NumberFormatException _
                       (raise {:type :client-error
                               :code 998
-                              :msg ":Bad Catchup Time"})))
-               ;; TODO: do the maths for the login offset
-               ;;(:login-time user)
-               0)
+                              :msg ":Bad Catchup Time"}))))
         ;;_ (println :time (str time))
-        msgs (messages-since time room)]
+        msgs (if time
+               (messages-since time room)
+               (messages-since-login user room))]
     msgs))
 
 (defn get-required-authentication-steps []
