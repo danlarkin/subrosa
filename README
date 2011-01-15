@@ -9,3 +9,23 @@ Self-signed Keystores (for SSL) can be created with the mkks.sh shell
 script provided in the release tarballs (and in pkg/bin/ in the source
 distribution).
 
+This fork contains the non-rfc command "/catchup", which is enabled when logging
+is enabled.
+
+Examples:
+
+/catchup #foo
+send all the messages that occurred before you logged in for the #foo room
+
+/catchup #foo 1d
+send all the messages in the last day
+
+/catchup #foo 1w
+send the messages for the last week
+
+/catchup #foo 1d2h17m1s
+send the messages for the last 1 day, 2 hours, 17 minutes and 1 second
+
+Warning: sending the messages for the last week will spam your client with
+many many messages, be warned the catchup command has not been tested in
+high-traffic setups.
