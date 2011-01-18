@@ -65,14 +65,14 @@
 (defn found? [pattern lines]
   (some (partial re-find pattern) lines))
 
-(defn expect [socket pattern found-pred]
+(defn expect [socket pattern]
   (.setSoTimeout (:socket socket) *timeout*)
   (let [in (:in socket)]
     (loop [line (socket-read-line in)]
       (swap! (:received socket) conj (if (= :timeout line)
                                        ""
                                        line))
-      (if (found-pred (found? pattern @(:received socket)))
+      (if (found? pattern @(:received socket))
         true
         (if (= :timeout line)
           (join "\n" @(:received socket))
@@ -82,7 +82,7 @@
   (let [socket (nth form 1)
         string (nth form 2)]
     `(do
-       (let [v# (expect ~socket ~string identity)]
+       (let [v# (expect ~socket ~string)]
          (if (true? v#)
            (report {:type :pass :message ~msg
                     :expected ~string :actual v#})
@@ -93,9 +93,10 @@
   (let [socket (nth form 1)
         string (nth form 2)]
     `(do
-       (let [v# (expect ~socket ~string not)]
-         (if (true? v#)
+       (let [v# (expect ~socket ~string)]
+         (if (not (true? v#))
            (report {:type :pass :message ~msg
                     :expected ~string :actual v#})
            (report {:type :fail :message ~msg
-                    :expected ~string :actual v#}))))))
+                    :expected (str "(not-found? " ~string ")")
+                    :actual (str "found " ~string)}))))))
