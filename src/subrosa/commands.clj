@@ -254,11 +254,13 @@
     (let [rooms (if (empty? rooms)
                   (all-rooms)
                   (.split rooms ","))]
-      (doseq [room rooms]
+      (doseq [room-name rooms
+              :when (room-for-name room-name)]
         (send-to-client channel 322 (format "%s %s :%s"
-                                            room
-                                            (count (nicks-in-room room))
-                                            (or (topic-for-room room) ""))))
+                                            room-name
+                                            (count (nicks-in-room room-name))
+                                            (or (topic-for-room room-name)
+                                                ""))))
       (send-to-client channel 323 ":End of LIST"))))
 
 (defcommand part [channel command]

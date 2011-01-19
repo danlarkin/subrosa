@@ -130,3 +130,10 @@
       (transmit s "LIST #foo")
       (is (received? s #"322 dan #foo 2 :$"))
       (is (received? s #"323 dan :End of LIST")))))
+
+(deftest list-non-extant-room
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "LIST #foo")
+    (is (not-received? s #"322"))))
