@@ -61,7 +61,7 @@
 (defn send-to-client* [channel msg]
   (when (.isWritable channel)
     (send io-agent
-          (fn [_] (io! (.write channel (str msg "\n")))))))
+          (fn [_] (io! (.write channel (str msg "\r\n")))))))
 
 (defn send-to-client
   ([channel code msg]
