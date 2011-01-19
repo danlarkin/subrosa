@@ -94,6 +94,33 @@
       (transmit s2 "QUIT")
       (is (received? s1 #":dan2!dan@.* QUIT :Client Quit")))))
 
+(deftest quit-should-leave-rooms
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (Thread/sleep 1000) ; Give dan1 a chance to authenticate
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "QUIT"))
+    (transmit s1 "NAMES #foo")
+    (is (received? s1 #"353 dan1 = #foo :dan1"))
+    (is (received? s1 #"End of NAMES list"))))
+
+(deftest quit-should-delete-room-if-its-empty
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "QUIT"))
+    (transmit s1 "LIST #foo")
+    (is (not-received? s1 #"322 dan1 #foo \d+ :$"))))
+
 (deftest all-clients-receive-nick-change
   (with-connection s1
     (transmit s1 "NICK dan1")
