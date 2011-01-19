@@ -1,0 +1,11 @@
+0.6 2011-01-18
+* Serialize all writes to reduce (eliminate?) out-of-order delivery issues.
+* Remove possibilty of incorrect dates/times getting logged in logging plugin.
+* Fix server name to include "subrosa-" instead of just the version number.
+* Fix LIST command to not send back a 322 response for non-extant channels.
+* Fix QUIT & PART to correctly delete a channel once the last member leaves.
+* Add NOTICE command. Hooray CTCP now works!
+* Add PONG command. Hooray?
+
+0.5 2010-12-07
+* Initial Release.

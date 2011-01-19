@@ -37,13 +37,6 @@
           :pending? #{}
           :login-time (.getTime (Date.))}))
 
-(defn remove-channel! [channel]
-  (let [user (user-for-channel channel)
-        user-in-rooms (select @db :user-in-room {:user-nick (:nick user)})]
-    (alter db remove-tuple :user user)
-    (doseq [uir user-in-rooms]
-      (alter db remove-tuple :user-in-room uir))))
-
 (defn add-user-for-nick! [channel nick]
   (let [user (user-for-channel channel)]
     (alter db remove-tuple :user user)
@@ -249,8 +242,9 @@
                                :topic nil})))
 
 (defn maybe-delete-room! [room-name]
-  (when (seq (select @db :user-in-room {:room-name room-name}))
-    (alter db remove-tuple :room {:room-name room-name})))
+  (when-not (seq (select @db :user-in-room {:room-name room-name}))
+    (let [room (room-for-name room-name)]
+      (alter db remove-tuple :room room))))
 
 (defn add-nick-to-room! [nick room-name]
   (when-not (nick-in-room? nick room-name)
@@ -260,6 +254,13 @@
 (defn remove-nick-from-room! [nick room-name]
   (alter db remove-tuple :user-in-room {:user-nick nick :room-name room-name})
   (maybe-delete-room! room-name))
+
+(defn remove-channel! [channel]
+  (let [user (user-for-channel channel)
+        nick (:nick user)]
+    (alter db remove-tuple :user user)
+    (doseq [room-name (rooms-for-nick nick)]
+      (remove-nick-from-room! nick room-name))))
 
 (defn topic-for-room [room-name]
   (:topic (room-for-name room-name)))
@@ -287,7 +288,7 @@
 (defn send-to-clients-in-rooms-for-nick [nick msg channel]
   (doseq [chan (into #{} (for [room-name (rooms-for-nick nick)
                                chan (channels-in-room room-name)
-                               :when (not= chan channel)]
+                               :when (and chan (not= chan channel))]
                            chan))]
     (send-to-client* chan msg)))
 

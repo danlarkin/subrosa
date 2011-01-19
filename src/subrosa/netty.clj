@@ -58,8 +58,7 @@
                 :protocol-error (send-to-client*
                                  (.getChannel evt)
                                  (format "ERROR %s" (:msg condition)))
-                :client-disconnect (println
-                                    "Accessed client data after disconnect."))]
+                :client-disconnect nil)]
         (when (:disconnect condition)
           (await chan-future-agent)
           (when-let [chan-future @chan-future-agent]

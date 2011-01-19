@@ -110,21 +110,20 @@
             :msg ":Unauthorized command (already registered)"})))
 
 (defn quit [channel quit-msg close-channel? send-to-self? send-to-others?]
-  (let [msg (format ":%s QUIT :Client Quit"
+  (let [nick (nick-for-channel channel)
+        msg (format ":%s QUIT :Client Quit"
                     (format-client channel))]
     (when send-to-others?
       (send-to-clients-in-rooms-for-nick
-       (nick-for-channel channel) msg channel))
-    (let [chan-future-agent (and
-                             send-to-self?
-                             (send-to-client* channel msg))]
+       nick msg channel))
+    (let [chan-future-agent (when send-to-self?
+                              (send-to-client* channel msg))]
       (when chan-future-agent
         (await chan-future-agent))
       (when send-to-others?
         (run-hook 'quit-hook channel "Client Quit"))
-      (when close-channel?
-        (when-let [chan-future @chan-future-agent]
-          (.addListener chan-future (ChannelFutureListener/CLOSE)))))))
+      (when (and close-channel? chan-future-agent)
+        (.addListener @chan-future-agent (ChannelFutureListener/CLOSE))))))
 
 (defcommand quit [channel quit-msg]
   (quit channel quit-msg true true false))
@@ -224,9 +223,30 @@
               :code 411
               :msg ":No recipient given (PRIVMSG)"}))))
 
+(defcommand notice [channel args]
+  (let [[recipient received-msg] (.split args " " 2)
+        msg (format ":%s NOTICE %s %s"
+                    (format-client channel) recipient received-msg)
+        plain-msg (subs msg 1)]
+    (when (and (not (empty? recipient))
+               (not (nil? received-msg)))
+      (if (room-for-name recipient)
+        (do
+          (send-to-room-except recipient msg channel)
+          (run-hook 'notice-room-hook channel recipient plain-msg))
+        (when-let [chan (channel-for-nick recipient)]
+          (send-to-client* chan msg)
+          (run-hook 'notice-nick-hook chan recipient plain-msg))))))
+
 (defcommand ping [channel server]
   (if (not (empty? server))
     (send-to-client* channel (format "PONG %s :%s" (hostname) server))
+    (raise {:type :client-error
+            :code 409
+            :msg ":No origin specified"})))
+
+(defcommand pong [channel server]
+  (when (empty? server)
     (raise {:type :client-error
             :code 409
             :msg ":No origin specified"})))
@@ -259,11 +279,13 @@
     (let [rooms (if (empty? rooms)
                   (all-rooms)
                   (.split rooms ","))]
-      (doseq [room rooms]
+      (doseq [room-name rooms
+              :when (room-for-name room-name)]
         (send-to-client channel 322 (format "%s %s :%s"
-                                            room
-                                            (count (nicks-in-room room))
-                                            (or (topic-for-room room) ""))))
+                                            room-name
+                                            (count (nicks-in-room room-name))
+                                            (or (topic-for-room room-name)
+                                                ""))))
       (send-to-client channel 323 ":End of LIST"))))
 
 (defcommand part [channel command]
