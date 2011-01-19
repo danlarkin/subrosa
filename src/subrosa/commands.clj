@@ -240,6 +240,12 @@
             :code 409
             :msg ":No origin specified"})))
 
+(defcommand pong [channel server]
+  (when (empty? server)
+    (raise {:type :client-error
+            :code 409
+            :msg ":No origin specified"})))
+
 (defcommand whois [channel username]
   (if-not (empty? username)
     (if-let [user (user-for-nick username)]

@@ -96,6 +96,15 @@
     (transmit s "PING")
     (is (received? s #"No origin specified"))))
 
+(deftest pong-command
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "PONG foobar")
+    (is (not-received? s #"421"))
+    (transmit s "PONG")
+    (is (received? s #"No origin specified"))))
+
 (deftest case-insensitive-commands
   (with-connection s
     (transmit s "nick dan")

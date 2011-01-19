@@ -5,6 +5,7 @@
 * Fix LIST command to not send back a 322 response for non-extant channels.
 * Fix QUIT & PART to correctly delete a channel once the last member leaves.
 * Add NOTICE command. Hooray CTCP now works!
+* Add PONG command. Hooray?
 
 0.5 2010-12-07
 * Initial Release.
