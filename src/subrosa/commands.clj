@@ -218,6 +218,21 @@
               :code 411
               :msg ":No recipient given (PRIVMSG)"}))))
 
+(defcommand notice [channel args]
+  (let [[recipient received-msg] (.split args " " 2)
+        msg (format ":%s NOTICE %s %s"
+                    (format-client channel) recipient received-msg)
+        plain-msg (subs msg 1)]
+    (when (and (not (empty? recipient))
+               (not (nil? received-msg)))
+      (if (room-for-name recipient)
+        (do
+          (send-to-room-except recipient msg channel)
+          (run-hook 'notice-room-hook channel recipient plain-msg))
+        (when-let [chan (channel-for-nick recipient)]
+          (send-to-client* chan msg)
+          (run-hook 'notice-nick-hook chan recipient plain-msg))))))
+
 (defcommand ping [channel server]
   (if (not (empty? server))
     (send-to-client* channel (format "PONG %s :%s" (hostname) server))
