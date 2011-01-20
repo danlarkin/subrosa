@@ -152,13 +152,13 @@
   [room msg-filter]
   (->> (select @db :message nil)
        (filter (fn [m] (= room (:room m))))
+       (sort-by :time)
        (filter msg-filter)
        (map (fn [m] (format catchup-format
                            (format-catchup-time (:time m))
                            (:nick m)
                            (:text m))))
        (remove nil?)
-       (sort-by :time)
        doall))
 
 (defn get-catchup-log
