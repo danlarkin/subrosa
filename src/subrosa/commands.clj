@@ -352,7 +352,9 @@
   (let [[room time] (.split args " " 2)
         offset-time (if time (parse-offset-time time) nil)
         msgs (get-catchup-log channel room offset-time)
-        start (format "PRIVMSG %s :%s sez:" (nick-for-channel channel) (catchup-name))
+        start (format "PRIVMSG %s :%s sez:"
+                      (nick-for-channel channel)
+                      (catchup-name))
         end (format "PRIVMSG %s :End of catchup" (nick-for-channel channel))]
     (when (> (count msgs) 0) (dispatch-message start channel))
     (doseq [msg-text msgs]

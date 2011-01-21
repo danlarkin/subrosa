@@ -74,3 +74,37 @@
     (is (not-received? s #"412"))
     (transmit s "NOTICE foobar :hey")
     (is (not-received? s #"401"))))
+
+(deftest catchup-command-test
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "NOTICE")
+    (transmit s "JOIN #foo")
+    (transmit s "PRIVMSG #foo :Hello, World!")
+    (transmit s "PRIVMSG #foo :Hey again"))
+  (Thread/sleep 1000) ;; logging has to catch up
+  (with-connection s2
+    (transmit s2 "NICK dan2")
+    (transmit s2 "USER dan2 0 * :Dan Larkin 2")
+    (transmit s2 "JOIN #foo")
+    (transmit s2 "CATCHUP #foo")
+    (is (received? s2 #"<dan> Hello, World!"))
+    (is (received? s2 #"<dan> Hey again"))))
+
+(deftest some-catchup-command-test
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "NOTICE")
+    (transmit s "JOIN #foo")
+    (transmit s "PRIVMSG #foo :Hello, World!")
+    (Thread/sleep 1500)
+    (transmit s "PRIVMSG #foo :Hey again"))
+  (with-connection s2
+    (transmit s2 "NICK dan2")
+    (transmit s2 "USER dan2 0 * :Dan Larkin 2")
+    (transmit s2 "JOIN #foo")
+    (transmit s2 "CATCHUP #foo 1s")
+    (is (not-received? s2 #"<dan> Hello, World!"))
+    (is (received? s2 #"<dan> Hey again"))))
