@@ -203,16 +203,12 @@
           (do
             (send-to-room-except recipient msg channel)
             (run-hook 'privmsg-room-hook
-                      channel recipient (if (= (first received-msg) ":")
-                                          (subs received-msg 1)
-                                          received-msg)))
+                      channel recipient (subs received-msg 1)))
           (if-let [channel (channel-for-nick recipient)]
             (do
               (send-to-client* channel msg)
               (run-hook 'privmsg-nick-hook
-                        channel recipient (if (= (first received-msg) ":")
-                                          (subs received-msg 1)
-                                          received-msg)))
+                        channel recipient (subs received-msg 1)))
             (raise {:type :client-error
                     :code 401
                     :msg (format "%s :No such nick/channel" recipient)})))
