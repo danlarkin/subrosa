@@ -93,7 +93,10 @@
   (send-to-client channel 4
                   (format "%s %s mMvV bcdefFhiIklmnoPqstv"
                           (hostname)
-                          (:version server))))
+                          (:version server)))
+  (send-to-client channel 5
+                  (format "NETWORK=%s :are supported on this server"
+                          (config :network))))
 
 (defn send-motd [channel]
   (send-to-client channel 422 ":MOTD File is missing"))
