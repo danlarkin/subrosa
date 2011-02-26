@@ -261,3 +261,13 @@
     (transmit s "NICK dan")
     (transmit s "USER danismyname 0 * :Dan Larkin")
     (is (received? s #"422 dan :MOTD File is missing"))))
+
+(deftest lusers-sent-at-authentication
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER danismyname 0 * :Dan Larkin")
+    (is (received? s #"251"))
+    (is (received? s #"252"))
+    (is (received? s #"253"))
+    (is (received? s #"254"))
+    (is (received? s #"255"))))

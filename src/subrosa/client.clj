@@ -20,6 +20,12 @@
 (defn channel-for-nick [nick]
   (-> nick user-for-nick :channel))
 
+(defn all-nicks []
+  (remove nil? (map :nick (select @db :user {:pending? nil}))))
+
+(defn all-rooms []
+  (map :name (select @db :room nil)))
+
 (defn authentication-for-channel [channel]
   (:pending? (user-for-channel channel)))
 
@@ -92,6 +98,17 @@
 (defn send-motd [channel]
   (send-to-client channel 422 ":MOTD File is missing"))
 
+(defn send-lusers [channel]
+  (send-to-client channel 251
+                  (format ":There are %s users and %s services on %s servers"
+                          (count (all-nicks)) 0 1))
+  (send-to-client channel 252 (format "%s :operators online" 0))
+  (send-to-client channel 253 (format "%s :unknown connections" 0))
+  (send-to-client channel 254 (format "%s :channels formed"
+                                      (count (all-rooms))))
+  (send-to-client channel 255 (format ":I have %s clients and %s servers"
+                                      (count (all-nicks)) 0)))
+
 (defn get-required-authentication-steps []
   (if (config :password)
     #{"NICK" "USER" "PASS"}
@@ -105,7 +122,8 @@
           (alter db remove-tuple :user user)
           (alter db add-tuple :user (assoc user :pending? nil))
           (send-welcome channel)
-          (send-motd channel))
+          (send-motd channel)
+          (send-lusers channel))
         (raise {:type :protocol-error
                 :disconnect true
                 :msg ":Bad Password"})))))
@@ -171,9 +189,6 @@
 (defn nicks-in-room [room-name]
   (map :user-nick (select @db :user-in-room {:room-name room-name})))
 
-(defn all-nicks []
-  (remove nil? (map :nick (select @db :user nil))))
-
 (defn channels-in-room [room-name]
   (for [{:keys [user-nick]} (select @db :user-in-room
                                     {:room-name room-name})]
@@ -194,9 +209,6 @@
                                :when (and chan (not= chan channel))]
                            chan))]
     (send-to-client* chan msg)))
-
-(defn all-rooms []
-  (map :name (select @db :room nil)))
 
 (defn set-topic-for-room! [room-name topic]
   (let [room (room-for-name room-name)]

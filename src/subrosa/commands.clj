@@ -311,6 +311,9 @@
 (defcommand motd [channel args]
   (send-motd channel))
 
+(defcommand lusers [channel args]
+  (send-lusers channel))
+
 (defcommand who [channel room-name]
   (let [room-name-for-reply (if (empty? room-name)
                               "*"
