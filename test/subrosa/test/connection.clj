@@ -255,3 +255,9 @@
     (transmit s "WHO #foo")
     (is (received? s #"352 dan #foo danismyname .* .* dan H :0 Dan Larkin"))
     (is (received? s #"315 dan #foo :End of WHO list"))))
+
+(deftest motd-sent-at-authentication
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER danismyname 0 * :Dan Larkin")
+    (is (received? s #"422 dan :MOTD File is missing"))))
