@@ -1,5 +1,6 @@
 (ns subrosa.server
-  (:use [clojure.contrib.datalog.database :only [make-database]])
+  (:use [clojure.contrib.datalog.database :only [make-database]]
+        [subrosa.config :only [config]])
   (:import [java.util Date]
            [java.net InetAddress]))
 
@@ -18,7 +19,7 @@
 
 (defonce db (ref (make-subrosa-db)))
 
-(defonce server {:host (.getHostName (InetAddress/getLocalHost))
+(defonce server {:host (config :host)
                  :version (str "subrosa-" (.trim (slurp "etc/version.txt")))
                  :started (Date.)})
 
