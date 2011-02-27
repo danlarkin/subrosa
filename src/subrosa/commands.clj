@@ -271,9 +271,19 @@
 
 (defcommand list [channel rooms]
   (when-not (= rooms "STOP")
-    (let [rooms (if (empty? rooms)
+    ;; erc sends an erroneous (AFAICT) colon along with its LIST command
+    ;; So we'll parse that out here and drop it if present.
+    (let [rooms (if (.startsWith rooms ":")
+                  (subs rooms 1)
+                  rooms)
+          rooms (if (empty? rooms)
                   (all-rooms)
                   (.split rooms ","))]
+      ;; Technically rfc2812 deprecates message 321,
+      ;; however erc won't do channel listing without it.
+      ;; Also, yes there should be two spaces between
+      ;; ":Users" and "Name"
+      (send-to-client channel 321 "Channel :Users  Name")
       (doseq [room-name rooms
               :when (room-for-name room-name)]
         (send-to-client channel 322 (format "%s %s :%s"
