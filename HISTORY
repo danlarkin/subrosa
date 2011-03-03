@@ -1,4 +1,12 @@
 0.7 ??
+* End all messages to clients with \r\n.
+* Add LUSERS command and send it along with the welcome message.
+* Allow server hostname to be set in config.
+* Send capabilities (005) message with NETWORK set as part of welcome message.
+* Send message 321 as a header for the LIST command.
+* Don't allow those not in a room to set its topic.
+* Perform no action when a client tries to join a room he's already in.
+* Don't allow clients to join a room without a # prefix.
 
 0.6 2011-01-18
 * Serialize all writes to reduce (eliminate?) out-of-order delivery issues.
