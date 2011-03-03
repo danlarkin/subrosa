@@ -56,6 +56,21 @@
     (transmit s "TOPIC #foo :awesome topic")
     (is (received? s #":dan!dan@.* TOPIC #foo :awesome topic"))))
 
+(deftest topic-command-in-a-room-im-not-in
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (Thread/sleep 1000) ; Give dan1 a chance to authenticate
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "TOPIC #foo :sweet")
+      (is (received? s2 #"442 dan2 #foo :You're not on that channel"))
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "TOPIC #foo :sweet")
+      (is (received? s2 #":dan2!dan@.* TOPIC #foo :sweet")))))
+
 (deftest names-command
   (with-connection s
     (transmit s "NICK dan")
