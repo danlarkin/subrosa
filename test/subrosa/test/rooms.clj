@@ -19,6 +19,13 @@
     (is (received? s #"353 dan = #foo :dan"))
     (is (received? s #"End of NAMES list"))))
 
+(deftest join-requires-room-with-hash
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN foo")
+    (is (received? s #"No such channel"))))
+
 (deftest part-command
   (with-connection s1
     (transmit s1 "NICK dan")

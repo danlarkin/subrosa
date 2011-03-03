@@ -138,13 +138,18 @@
                                                      rooms keys))
                    :when (not (nick-in-room? (nick-for-channel channel)
                                              room-name))]
-             (add-nick-to-room! (nick-for-channel channel) room-name)
-             (send-to-room room-name (format ":%s JOIN %s"
-                                             (format-client channel)
-                                             room-name))
-             (dispatch-message (format "TOPIC %s" room-name) channel)
-             (dispatch-message (format "NAMES %s" room-name) channel)
-             (run-hook 'join-hook channel room-name))))
+             (if (.startsWith room-name "#")
+               (do
+                 (add-nick-to-room! (nick-for-channel channel) room-name)
+                 (send-to-room room-name (format ":%s JOIN %s"
+                                                 (format-client channel)
+                                                 room-name))
+                 (dispatch-message (format "TOPIC %s" room-name) channel)
+                 (dispatch-message (format "NAMES %s" room-name) channel)
+                 (run-hook 'join-hook channel room-name))
+               (raise {:type :client-error
+                       :code 403
+                       :msg (format "%s :No such channel" room-name)})))))
         (raise {:type :client-error
                 :code 461
                 :msg "JOIN :Not enough parameters"}))
