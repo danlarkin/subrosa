@@ -135,7 +135,9 @@
               keys (.split (or keys "") ",")]
           (dosync
            (doseq [[room-name key] (partition-all 2 (interleave-all
-                                                     rooms keys))]
+                                                     rooms keys))
+                   :when (not (nick-in-room? (nick-for-channel channel)
+                                             room-name))]
              (add-nick-to-room! (nick-for-channel channel) room-name)
              (send-to-room room-name (format ":%s JOIN %s"
                                              (format-client channel)
