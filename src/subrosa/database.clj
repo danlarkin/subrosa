@@ -11,9 +11,9 @@
 
 (defn get*
   ([db table]
-     (vals (get-in db [table :id])))
+     (vals (get-in db [table :data :id])))
   ([db table column value]
-     (get-in db [table column value])))
+     (get-in db [table :data column value])))
 
 (defn get
   ([table]
@@ -22,10 +22,11 @@
      (get* @db table column value)))
 
 (defn delete* [db table m]
-  (assoc db table (reduce (fn [a [k v]]
-                            (update-in a [k] dissoc v))
-                          (db table)
-                          m)))
+  (update-in db [table] assoc
+             :data (reduce (fn [a [k v]]
+                             (update-in a [k] dissoc v))
+                           (get-in db [table :data])
+                           m)))
 
 (defn delete [table id]
   (dosync
@@ -33,10 +34,11 @@
      (alter db delete* table m))))
 
 (defn put* [db table m]
-  (assoc db table (reduce (fn [a [k v]]
-                            (update-in a [k] assoc v m))
-                          (db table)
-                          m)))
+  (update-in db [table] assoc
+             :data (reduce (fn [a [k v]]
+                             (update-in a [k] assoc v m))
+                           (get-in db [table :data])
+                           m)))
 
 (defn put [table m]
   (dosync
