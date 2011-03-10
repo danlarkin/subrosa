@@ -35,12 +35,18 @@
   ([table column value]
      (get* @db table column value)))
 
+(defn select-from-indices [db table m]
+  (into {} (for [index (get-indices* db table)]
+             [index (if (coll? index)
+                      (map m index)
+                      (m index))])))
+
 (defn delete* [db table m]
   (update-in db [table] assoc
              :data (reduce (fn [a [k v]]
                              (update-in a [k] dissoc v))
                            (get-in db [table :data])
-                           (select-keys m (get-indices* db table)))))
+                           (select-from-indices db table m))))
 
 (defn delete [table id]
   (dosync
@@ -52,7 +58,7 @@
              :data (reduce (fn [a [k v]]
                              (update-in a [k] assoc v m))
                            (get-in db [table :data])
-                           (select-keys m (get-indices* db table)))))
+                           (select-from-indices db table m))))
 
 (defn put [table m]
   (dosync
