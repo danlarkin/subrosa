@@ -9,6 +9,20 @@
     m
     (assoc m :id (str (UUID/randomUUID)))))
 
+(defn add-index* [db table field-or-fields]
+  (update-in db [table :indices] (comp set conj) field-or-fields))
+
+(defn add-index [table field-or-fields]
+  (dosync
+   (alter db add-index* table field-or-fields)))
+
+(defn get-indices* [db table]
+  (conj (get-in db [table :indices]) :id))
+
+(defn get-indices [table]
+  (dosync
+   (get-indices* @db table)))
+
 (defn get*
   ([db table]
      (vals (get-in db [table :data :id])))
@@ -26,7 +40,7 @@
              :data (reduce (fn [a [k v]]
                              (update-in a [k] dissoc v))
                            (get-in db [table :data])
-                           m)))
+                           (select-keys m (get-indices* db table)))))
 
 (defn delete [table id]
   (dosync
@@ -38,7 +52,7 @@
              :data (reduce (fn [a [k v]]
                              (update-in a [k] assoc v m))
                            (get-in db [table :data])
-                           m)))
+                           (select-keys m (get-indices* db table)))))
 
 (defn put [table m]
   (dosync

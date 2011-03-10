@@ -13,6 +13,8 @@
 
 (deftest basic-database-operations
   (let [m {:foo 42 :nick "dan"}]
+    (db/add-index :foo :foo)
+    (db/add-index :foo :nick)
     (db/put :foo m)
     (is (=* (db/get :foo :foo 42)
             m))
