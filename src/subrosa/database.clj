@@ -25,7 +25,7 @@
 
 (defn get*
   ([db table]
-     (vals (get-in db [table :data :id])))
+     (set (vals (get-in db [table :data :id]))))
   ([db table column value]
      (get-in db [table :data column value])))
 
