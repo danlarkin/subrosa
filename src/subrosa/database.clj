@@ -41,17 +41,18 @@
                       (map m index)
                       (m index))])))
 
-(defn delete* [db table m]
+(defn delete* [db table id]
   (update-in db [table] assoc
              :data (reduce (fn [a [k v]]
                              (update-in a [k] dissoc v))
                            (get-in db [table :data])
-                           (select-from-indices db table m))))
+                           (select-from-indices
+                            db table (or (get* db table :id id)
+                                         {})))))
 
 (defn delete [table id]
   (dosync
-   (let [m (get table :id id)]
-     (alter db delete* table m))))
+   (alter db delete* table id)))
 
 (defn put* [db table m]
   (update-in db [table] assoc
@@ -65,5 +66,5 @@
    (let [m (ensure-id m)]
      (alter db (fn [db]
                  (-> db
-                     (delete* table m)
+                     (delete* table (:id m))
                      (put* table m)))))))
