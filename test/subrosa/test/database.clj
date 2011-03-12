@@ -66,3 +66,14 @@
     (is (nil? (db/get :table1 [:baz :nick] [42 "dan"])))
     (is (= m2 (db/get :table1 [:baz :nick] [42 "dan2"])))
     (is (= #{m2} (db/get :table1)))))
+
+(deftest test-list-index
+  (let [m {:baz 42 :nick "dan" :id "foo"}
+        m2 {:baz 3 :nick "dan" :id "foo2"}]
+    (db/add-index :table1 :nick :list true)
+    (db/put :table1 m)
+    (db/put :table1 m2)
+    (is (= #{m m2} (db/get :table1 :nick "dan")))
+    (is (= #{m m2} (db/get :table1)))
+    (db/delete :table1 "foo")
+    (is (= #{m2} (db/get :table1 :nick "dan")))))
