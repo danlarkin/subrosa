@@ -15,10 +15,9 @@
   (let [server (create-server *port*)]
     (try
       (with-out-str ((:start-fn server)))
-      #_(Thread/sleep 500)
       (f)
-      (with-out-str ((:stop-fn server)))
-      #_(Thread/sleep 2000))))
+      (finally
+       (with-out-str ((:stop-fn server)))))))
 
 (defn socket-read-line [in]
   (try
