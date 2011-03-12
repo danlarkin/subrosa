@@ -58,7 +58,7 @@
 
 (defn transmit [socket command]
   (let [out (:out socket)]
-    (.write out (.getBytes (str command "\n")))
+    (.write out (.getBytes (str command "\r\n")))
     (.flush out)))
 
 (defn found? [pattern lines]
