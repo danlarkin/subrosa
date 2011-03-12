@@ -1,13 +1,13 @@
 (ns subrosa.client
-  (:use [clojure.contrib.datalog.database :only [add-tuple remove-tuple select]]
-        [clojure.contrib.condition :only [raise]]
+  (:require [subrosa.database :as db])
+  (:use [clojure.contrib.condition :only [raise]]
         [subrosa.server]
         [subrosa.config :only [config]]))
 
 (def io-agent (agent nil))
 
 (defn user-for-channel [channel]
-  (if-let [user (first (select @db :user {:channel channel}))]
+  (if-let [user (db/get :user :channel channel)]
     user
     (raise {:type :client-disconnect})))
 
@@ -15,16 +15,16 @@
   (-> channel user-for-channel :nick))
 
 (defn user-for-nick [nick]
-  (first (select @db :user {:nick nick})))
+  (db/get :user :nick nick))
 
 (defn channel-for-nick [nick]
   (-> nick user-for-nick :channel))
 
 (defn all-nicks []
-  (remove nil? (map :nick (select @db :user {:pending? nil}))))
+  (remove nil? (map :nick (remove :pending? (db/get :user)))))
 
 (defn all-rooms []
-  (map :name (select @db :room nil)))
+  (map :name (db/get :room)))
 
 (defn authentication-for-channel [channel]
   (:pending? (user-for-channel channel)))
@@ -33,33 +33,27 @@
   (nil? (authentication-for-channel channel)))
 
 (defn add-channel! [channel]
-  (alter db add-tuple :user
-         {:nick nil
-          :real-name nil
-          :user-name nil
-          :channel channel
-          :pending? #{}}))
+  (db/put :user {:nick nil
+                 :real-name nil
+                 :user-name nil
+                 :channel channel
+                 :pending? #{}}))
 
 (defn add-user-for-nick! [channel nick]
   (let [user (user-for-channel channel)]
-    (alter db remove-tuple :user user)
-    (alter db add-tuple :user (assoc user :nick nick))))
+    (db/put :user (assoc user :nick nick))))
 
 (defn change-nickname! [channel new-nick]
   (let [existing-user (user-for-channel channel)]
-    (alter db remove-tuple :user existing-user)
-    (alter db add-tuple :user (assoc existing-user :nick new-nick))
-    (doseq [user-in-room (select @db :user-in-room
-                                 {:user-nick (:nick existing-user)})]
-      (alter db remove-tuple :user-in-room user-in-room)
-      (alter db add-tuple :user-in-room
-             (assoc user-in-room :user-nick new-nick)))))
+    (db/put :user (assoc existing-user :nick new-nick))
+    (doseq [user-in-room (db/get :user-in-room :user-nick
+                                 (:nick existing-user))]
+      (db/put :user-in-room (assoc user-in-room :user-nick new-nick)))))
 
 (defn maybe-add-authentication-step! [channel step]
   (when-not (authenticated? channel)
     (let [user (user-for-channel channel)]
-      (alter db remove-tuple :user user)
-      (alter db add-tuple :user (update-in user [:pending?] conj step)))))
+      (db/put :user (update-in user [:pending?] conj step)))))
 
 (defn hostname []
   (:host server))
@@ -122,8 +116,7 @@
     (when (not (authenticated? channel))
       (if (not (and (config :password) (= (:pending? user) #{"NICK" "USER"})))
         (when (= (:pending? user) (get-required-authentication-steps))
-          (alter db remove-tuple :user user)
-          (alter db add-tuple :user (assoc user :pending? nil))
+          (db/put :user (assoc user :pending? nil))
           (send-welcome channel)
           (send-motd channel)
           (send-lusers channel))
@@ -133,10 +126,9 @@
 
 (defn update-user-for-nick! [nick [user-name mode _ real-name]]
   (let [user (user-for-nick nick)]
-    (alter db remove-tuple :user user)
-    (alter db add-tuple :user (assoc user
-                                :user-name user-name
-                                :real-name (subs real-name 1)))))
+    (db/put :user (assoc user
+                    :user-name user-name
+                    :real-name (subs real-name 1)))))
 
 (defn format-hostname [channel]
   (-> channel
@@ -152,37 +144,41 @@
             (format-hostname channel))))
 
 (defn nick-in-room? [nick room-name]
-  (first (select @db :user-in-room {:user-nick nick
-                                    :room-name room-name})))
+  (db/get :user-in-room [:user-nick :room-name] [nick room-name]))
+
 (defn room-for-name [room-name]
-  (first (select @db :room {:name room-name})))
+  (db/get :room :name room-name))
 
 (defn rooms-for-nick [nick]
-  (map :room-name (select @db :user-in-room {:user-nick nick})))
+  (map :room-name (db/get :user-in-room :user-nick nick)))
 
 (defn maybe-create-room! [room-name]
   (when-not (room-for-name room-name)
-    (alter db add-tuple :room {:name room-name
-                               :topic nil})))
+    (db/put :room {:name room-name
+                   :topic nil})))
 
 (defn maybe-delete-room! [room-name]
-  (when-not (seq (select @db :user-in-room {:room-name room-name}))
+  (when-not (seq (db/get :user-in-room :room-name room-name))
     (let [room (room-for-name room-name)]
-      (alter db remove-tuple :room room))))
+      (db/delete :room (:id room)))))
 
 (defn add-nick-to-room! [nick room-name]
   (when-not (nick-in-room? nick room-name)
     (maybe-create-room! room-name)
-    (alter db add-tuple :user-in-room {:user-nick nick :room-name room-name})))
+    (db/put :user-in-room {:user-nick nick
+                           :room-name room-name})))
 
 (defn remove-nick-from-room! [nick room-name]
-  (alter db remove-tuple :user-in-room {:user-nick nick :room-name room-name})
+  (->> (db/get :user-in-room [:user-nick :room-name] [nick room-name])
+       :id
+       (db/delete :user-in-room))
   (maybe-delete-room! room-name))
 
 (defn remove-channel! [channel]
   (let [user (user-for-channel channel)
         nick (:nick user)]
-    (alter db remove-tuple :user user)
+    #_(println "gonna remove user:" user)
+    (db/delete :user (:id user))
     (doseq [room-name (rooms-for-nick nick)]
       (remove-nick-from-room! nick room-name))))
 
@@ -190,11 +186,10 @@
   (:topic (room-for-name room-name)))
 
 (defn nicks-in-room [room-name]
-  (map :user-nick (select @db :user-in-room {:room-name room-name})))
+  (map :user-nick (db/get :user-in-room :room-name room-name)))
 
 (defn channels-in-room [room-name]
-  (for [{:keys [user-nick]} (select @db :user-in-room
-                                    {:room-name room-name})]
+  (for [{:keys [user-nick]} (db/get :user-in-room :room-name room-name)]
     (:channel (user-for-nick user-nick))))
 
 (defn send-to-room [room-name msg]
@@ -215,6 +210,5 @@
 
 (defn set-topic-for-room! [room-name topic]
   (let [room (room-for-name room-name)]
-    (alter db remove-tuple :room room)
-    (alter db add-tuple :room (assoc room
-                                :topic topic))))
+    (db/put :room (assoc room
+                    :topic topic))))
