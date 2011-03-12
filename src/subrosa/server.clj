@@ -1,29 +1,24 @@
 (ns subrosa.server
-  (:use [clojure.contrib.datalog.database :only [make-database]]
-        [subrosa.config :only [config]])
+  (:require [subrosa.database :as db])
+  (:use [subrosa.config :only [config]])
   (:import [java.util Date]
            [java.net InetAddress]))
 
-(defn make-subrosa-db []
-  (make-database
-   (relation :user [:nick :real-name :user-name :channel :pending?])
-   (index :user :nick)
-   (index :user :channel)
-
-   (relation :room [:name :topic])
-   (index :room :name)
-
-   (relation :user-in-room [:user-nick :room-name])
-   (index :user-in-room :user-nick)
-   (index :user-in-room :room-name)))
-
-(defonce db (ref (make-subrosa-db)))
+;; database schema:
+;; :user => [:nick :real-name :user-name :channel :pending?]
+;; :room => [:name :topic]
+;; :user-in-room => [:user-nick :room-name]
 
 (defonce server {:host (config :host)
                  :version (str "subrosa-" (.trim (slurp "etc/version.txt")))
                  :started (Date.)})
 
 (defn reset-all-state! []
-  (dosync
-   (alter-var-root #'server assoc :started (Date.))
-   (ref-set db (make-subrosa-db))))
+  (alter-var-root #'server assoc :started (Date.))
+  (dosync (ref-set db/db {}))
+  (db/add-index :user :nick)
+  (db/add-index :user :channel)
+  (db/add-index :room :name)
+  (db/add-index :user-in-room :user-nick :list true)
+  (db/add-index :user-in-room :room-name :list true)
+  (db/add-index :user-in-room [:user-nick :room-name]))
