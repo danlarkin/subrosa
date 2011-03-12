@@ -4,15 +4,14 @@
         [subrosa.server]
         [subrosa.config :only [config]]))
 
-(def io-agent (agent nil))
-
 (defn user-for-channel [channel]
-  (if-let [user (db/get :user :channel channel)]
-    user
-    (raise {:type :client-disconnect})))
+  (db/get :user :channel channel))
 
 (defn nick-for-channel [channel]
   (-> channel user-for-channel :nick))
+
+(defn agent-for-channel [channel]
+  (-> channel user-for-channel :agent))
 
 (defn user-for-nick [nick]
   (db/get :user :nick nick))
@@ -37,6 +36,7 @@
                  :real-name nil
                  :user-name nil
                  :channel channel
+                 :agent (agent "jack bauer")
                  :pending? #{}}))
 
 (defn add-user-for-nick! [channel nick]
@@ -59,8 +59,8 @@
   (:host server))
 
 (defn send-to-client* [channel msg]
-  (when (.isWritable channel)
-    (send io-agent
+  (when (and channel (.isWritable channel))
+    (send (agent-for-channel channel)
           (fn [_] (io! (.write channel (str msg "\r\n")))))))
 
 (defn send-to-client

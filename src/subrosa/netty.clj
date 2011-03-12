@@ -1,7 +1,7 @@
 (ns subrosa.netty
   (:use [subrosa.server :only [reset-all-state!]]
         [subrosa.client :only [add-channel! remove-channel! send-to-client
-                               send-to-client*]]
+                               send-to-client* user-for-channel]]
         [subrosa.config :only [config]]
         [subrosa.ssl :only [make-ssl-engine]]
         [subrosa.commands :only [dispatch-message quit]]
@@ -152,7 +152,8 @@
                       (.add channel-group)))
      :stop-fn (fn []
                 (println "Shutting down Subrosa.")
-                (doseq [channel channel-group]
+                (doseq [channel channel-group
+                        :when (user-for-channel channel)]
                   (send-to-client* channel "ERROR :Server going down"))
                 (-> channel-group .close .awaitUninterruptibly)
                 (.releaseExternalResources channel-factory))}))
