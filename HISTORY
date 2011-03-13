@@ -1,3 +1,5 @@
+0.8 ??
+
 0.7 2011-03-13
 * End all messages to clients with \r\n.
 * Add LUSERS command and send it along with the welcome message.
