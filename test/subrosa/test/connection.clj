@@ -271,3 +271,20 @@
     (is (received? s #"253"))
     (is (received? s #"254"))
     (is (received? s #"255"))))
+
+(deftest ison-command
+  (with-connection s
+    (transmit s "NICK superdan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "ISON")
+    (is (received? s #"461 superdan ISON :Not enough parameters"))
+    (transmit s "ISON dan")
+    (is (received? s #"303 superdan :$"))
+    (transmit s "ISON superdan")
+    (is (received? s #"303 superdan :superdan$"))
+    (with-connection s2
+      (transmit s2 "NICK awesomedan")
+      (transmit s2 "USER dan2 0 * :Dan Larkin2")
+      (Thread/sleep 1000)
+      (transmit s "ISON dan superdan awesomedan")
+      (is (received? s #"303 superdan :superdan awesomedan$")))))

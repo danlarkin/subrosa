@@ -355,3 +355,14 @@
                                           real-name)))
     (send-to-client channel 315 (format "%s :End of WHO list"
                                         room-name-for-reply))))
+
+(defcommand ison [channel nicks]
+  (if (not (empty? nicks))
+    (let [nicks (.split nicks " ")
+          on-nicks (filter user-for-nick nicks)]
+      (send-to-client channel 303 (format ":%s"
+                                          (apply str
+                                                 (interpose " " on-nicks)))))
+    (raise {:type :client-error
+            :code 461
+            :msg  "ISON :Not enough parameters"})))

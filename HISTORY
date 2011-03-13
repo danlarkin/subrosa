@@ -9,6 +9,7 @@
 * Don't allow clients to join a room without a # prefix.
 * Switch to custom database backend instead of using clojure.contrib.datalog.
 * Every connection now gets its own IO thread, eliminating a possible QUIT race condition.
+* Add ISON command.
 
 0.6 2011-01-18
 * Serialize all writes to reduce (eliminate?) out-of-order delivery issues.
