@@ -366,3 +366,39 @@
     (raise {:type :client-error
             :code 461
             :msg  "ISON :Not enough parameters"})))
+
+(defcommand invite [channel args]
+  (let [sender-nick (nick-for-channel channel)
+        [target-nick room-name] (.split args " " 2)
+        do-invite (fn []
+                    (send-to-client* (channel-for-nick target-nick)
+                                     (format ":%s INVITE %s %s"
+                                             (format-client channel)
+                                             target-nick
+                                             room-name))
+                    (send-to-client (channel-for-nick sender-nick)
+                                    341
+                                    (format "%s %s" room-name target-nick)))]
+    (if (not (or (empty? target-nick)
+                 (empty? room-name)))
+      (if (user-for-nick target-nick)
+        (if (not (nick-in-room? target-nick room-name))
+          (if (room-for-name room-name)
+            (if (nick-in-room? sender-nick room-name)
+              (do-invite)
+              (raise {:type :client-error
+                      :code 442
+                      :msg (format "%s :You're not on that channel"
+                                   room-name)}))
+            (do-invite))
+          (raise {:type :client-error
+                  :code 443
+                  :msg (format "%s %s :is already on channel"
+                               target-nick
+                               room-name)}))
+        (raise {:type :client-error
+                :code 401
+                :msg (format "%s :No such nick/channel" target-nick)}))
+      (raise {:type :client-error
+              :code 461
+              :msg  "INVITE :Not enough parameters"}))))

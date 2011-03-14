@@ -1,4 +1,5 @@
 0.8 ??
+* Add INVITE command.
 
 0.7 2011-03-13
 * End all messages to clients with \r\n.

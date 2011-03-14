@@ -186,3 +186,54 @@
     (transmit s "USER dan 0 * :Dan Larkin")
     (transmit s "LIST #foo")
     (is (not-received? s #"322"))))
+
+(deftest invite-error-conditions
+  (with-connection s0
+    (transmit s0 "NICK dan0")
+    (transmit s0 "USER dan 0 * :Dan Larkin")
+    (transmit s0 "JOIN #dan0")
+    (with-connection s
+      (transmit s "NICK dan")
+      (transmit s "USER dan 0 * :Dan Larkin")
+      (transmit s "JOIN #foo")
+      (with-connection s2
+        (transmit s2 "NICK dan2")
+        (transmit s2 "USER dan 0 * :Dan Larkin")
+        (transmit s2 "JOIN #foo")
+        (Thread/sleep 1000)
+        (transmit s "INVITE")
+        (is (received? s #"461 dan INVITE :Not enough parameters"))
+        (reset! (:received s) [])
+        (transmit s "INVITE foo")
+        (is (received? s #"461 dan INVITE :Not enough parameters"))
+        (transmit s "INVITE notanick #foo")
+        (is (received? s #"401 dan notanick :No such nick/channel"))
+        (transmit s "INVITE dan2 #foo")
+        (is (received? s #"443 dan dan2 #foo :is already on channel"))
+        (transmit s "INVITE dan2 #dan0")
+        (is (received? s #"442 dan #dan0 :You're not on that channel"))))))
+
+(deftest successful-invite-to-channel-im-on
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #foo")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (Thread/sleep 1000)
+      (transmit s "INVITE dan2 #foo")
+      (is (received? s2 #"dan!dan@.* INVITE dan2 #foo"))
+      (is (received? s #"341 dan #foo dan2")))))
+
+(deftest successful-invite-to-channel-im-not-on
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (Thread/sleep 1000)
+      (transmit s "INVITE dan2 #foo")
+      (is (received? s2 #"dan!dan@.* INVITE dan2 #foo"))
+      (is (received? s #"341 dan #foo dan2")))))
