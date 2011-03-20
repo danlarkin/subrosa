@@ -1,6 +1,7 @@
 {:host "localhost"
  :network "Subrosa"
- :logging {:directory nil}
  :ssl {:keystore nil
        :password nil}
- :password nil}
+ :password nil
+ :plugins {:fs-logging {:enabled? false
+                        :directory "log"}}}

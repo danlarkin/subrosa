@@ -1,19 +1,23 @@
-(ns subrosa.test.plugins.logging
+(ns subrosa.test.plugins.fs-logging
   (:use [clojure.test]
         [clojure.contrib.io :only [delete-file-recursively]]
-        [subrosa.plugins.logging :only [get-log-name format-date format-time]]
-        [subrosa.config :only [config config-override]]
+        [subrosa.hooks :only [hooks]]
+        [subrosa.plugins.fs-logging :only [get-log-name format-date
+                                           format-time add-hooks]]
+        [subrosa.config :only [config]]
         [subrosa.utils :only [with-var-root]]
         [subrosa.test.expect]))
 
 (use-fixtures :once (fn [f]
-                      (with-var-root [config (config-override
-                                              {:logging {:directory "log"}})
+                      (with-var-root [hooks (ref @hooks)
                                       format-date (constantly "2010-11-23")
                                       format-time (constantly "19:16:45")]
-                        (delete-file-recursively "log" :silently)
+                        (add-hooks)
+                        (delete-file-recursively
+                         (config :plugins :fs-logging :directory) :silently)
                         (f)
-                        (delete-file-recursively "log"))))
+                        (delete-file-recursively
+                         (config :plugins :fs-logging :directory)))))
 
 (use-fixtures :each run-test-server)
 
