@@ -7,9 +7,6 @@
   (:import (java.util Date)
            (java.text SimpleDateFormat)))
 
-(defn- format-date []
-  (.format (SimpleDateFormat. (config :catchup :date-format)) (Date.)))
-
 (defn- format-time []
   (.format (SimpleDateFormat. (config :catchup :time-format)) (Date.)))
 
@@ -18,7 +15,7 @@
 (defn- add-msg-fn [msg]
   (fn update-msg-agent [db]
     (let [room (:room msg)
-          text (str (format-date) ":" (format-time) ": " (:msg msg))]
+          text (:msg msg)]
       (if (db room)
         ;; have the room already
         (do
@@ -45,7 +42,10 @@
 (defmulti catchup-dispatch (fn [& args] (first args)))
 
 (defmethod catchup-dispatch 'privmsg-room-hook [hook channel room-name msg]
-  (add-msg room-name (format "<%s> %s" (nick-for-channel channel) msg)))
+  (add-msg room-name (format "<%s> [%s] %s"
+                             (nick-for-channel channel)
+                             (format-time)
+                             msg)))
 
 (defmethod catchup-dispatch 'join-hook [hook channel room-name]
   (add-msg room-name
@@ -93,14 +93,22 @@
   (let [[room size] (.split args " ")
         size (try (Integer/parseInt size)
                   (catch Exception _
-                    (config :catchup :default-catchup-size)))]
-    (if room
-      (do
-        (send-to-client channel 999 (str "*** Catchup Playback for " room ":"))
-        (doseq [msg (take (or size (config :catchup :default-catchup-size))
-                          (messages-for room))]
-          (send-to-client channel 999 msg))
-        (send-to-client channel 999 "*** Catchup Complete."))
+                    (config :catchup :default-catchup-size)))
+        begin (format ":%s PRIVMSG %s :%s" (format-client channel)
+                      room (str "*** Catchup Playback for " room ":"))
+        end (format ":%s PRIVMSG %s :%s" (format-client channel)
+                    room (str "*** Catchup Complete."))]
+    (if (room-for-name room)
+      (let [all-messages (messages-for room)
+            msgs (drop (- (count all-messages)
+                          (or size (config :catchup :default-catchup-size)))
+                       all-messages)]
+        (send-to-client* channel begin)
+        (doseq [m msgs]
+          (send-to-client* channel
+                           (format ":%s PRIVMSG %s :%s"
+                                   (format-client channel) room m)))
+        (send-to-client* channel end))
       (raise {:type :client-error
               :code 999
-              :msg ":No room given"}))))
+              :msg ":No room given or room does not exist"}))))
