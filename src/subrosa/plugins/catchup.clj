@@ -8,20 +8,20 @@
            (java.text SimpleDateFormat)))
 
 (defn- format-time []
-  (.format (SimpleDateFormat. (config :catchup :time-format)) (Date.)))
+  (.format (SimpleDateFormat. (config :plugins :catchup :time-format)) (Date.)))
 
 (def msg-db-agent (agent {}))
 
 (defn- add-msg-fn [msg]
   (fn update-msg-agent [db]
     (let [room (:room msg)
-          text (:msg msg)]
+          text (:msg msg)
+          max-size (config :plugins :catchup :max-msgs-per-room)]
       (if (db room)
         ;; have the room already
         (do
           (swap! (db room) (fn update-msg-atom [q]
-                             (conj (if (>= (count q)
-                                           (config :catchup :max-msgs-per-room))
+                             (conj (if (>= (count q) max-size)
                                      (pop q)
                                      q)
                                    text)))
@@ -82,33 +82,35 @@
 (defn catchup-log [& args]
   (apply catchup-dispatch args))
 
-(add-hook ::catchup 'privmsg-room-hook catchup-log)
-(add-hook ::catchup 'join-hook catchup-log)
-(add-hook ::catchup 'part-hook catchup-log)
-(add-hook ::catchup 'quit-hook catchup-log)
-(add-hook ::catchup 'nick-hook catchup-log)
-(add-hook ::catchup 'topic-hook catchup-log)
+(defn add-hooks []
+  (add-hook ::catchup 'privmsg-room-hook catchup-log)
+  (add-hook ::catchup 'join-hook catchup-log)
+  (add-hook ::catchup 'part-hook catchup-log)
+  (add-hook ::catchup 'quit-hook catchup-log)
+  (add-hook ::catchup 'nick-hook catchup-log)
+  (add-hook ::catchup 'topic-hook catchup-log))
 
-(defcommand catchup [channel args]
-  (let [[room size] (.split args " ")
-        size (try (Integer/parseInt size)
-                  (catch Exception _
-                    (config :catchup :default-catchup-size)))
-        begin (format ":%s PRIVMSG %s :%s" (format-client channel)
-                      room (str "*** Catchup Playback for " room ":"))
-        end (format ":%s PRIVMSG %s :%s" (format-client channel)
-                    room (str "*** Catchup Complete."))]
-    (if (room-for-name room)
-      (let [all-messages (messages-for room)
-            msgs (drop (- (count all-messages)
-                          (or size (config :catchup :default-catchup-size)))
-                       all-messages)]
-        (send-to-client* channel begin)
-        (doseq [m msgs]
-          (send-to-client* channel
-                           (format ":%s PRIVMSG %s :%s"
-                                   (format-client channel) room m)))
-        (send-to-client* channel end))
-      (raise {:type :client-error
-              :code 999
-              :msg ":No room given or room does not exist"}))))
+(when (config :plugins :catchup :enabled?)
+  (add-hooks)
+  (defcommand catchup [channel args]
+    (let [[room size] (.split args " ")
+          default-size (config :plugins :catchup :default-catchup-size)
+          size (try (Integer/parseInt size)
+                    (catch Exception _ default-size))
+          begin (format ":%s PRIVMSG %s :%s" (format-client channel)
+                        room (str "*** Catchup Playback for " room ":"))
+          end (format ":%s PRIVMSG %s :%s" (format-client channel)
+                      room (str "*** Catchup Complete."))]
+      (if (room-for-name room)
+        (let [all-messages (messages-for room)
+              msgs (drop (- (count all-messages) (or size default-size))
+                         all-messages)]
+          (send-to-client* channel begin)
+          (doseq [m msgs]
+            (send-to-client* channel
+                             (format ":%s PRIVMSG %s :%s"
+                                     (format-client channel) room m)))
+          (send-to-client* channel end))
+        (raise {:type :client-error
+                :code 999
+                :msg ":No room given or room does not exist"})))))

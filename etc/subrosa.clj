@@ -1,10 +1,11 @@
 {:host "localhost"
  :network "Subrosa"
- :catchup {:max-msgs-per-room 100
-           :default-catchup-size 40
-           :time-format "HH:mm:ss"}
  :ssl {:keystore nil
        :password nil}
  :password nil
  :plugins {:fs-logging {:enabled? false
-                        :directory "log"}}}
+                        :directory "log"}
+           :catchup {:enabled? true
+                     :max-msgs-per-room 20
+                     :default-catchup-size 10
+                     :time-format "HH:mm:ss"}}}
