@@ -8,14 +8,12 @@
            (java.text SimpleDateFormat)))
 
 (defn- format-date []
-  (.format (SimpleDateFormat. "yyyy-MM-dd") (Date.)))
+  (.format (SimpleDateFormat. (config :catchup :date-format)) (Date.)))
 
 (defn- format-time []
-  (.format (SimpleDateFormat. "HH:mm:ss") (Date.)))
+  (.format (SimpleDateFormat. (config :catchup :time-format)) (Date.)))
 
 (def msg-db-agent (agent {}))
-
-(def max-msgs-per-room 10)
 
 (defn- add-msg-fn [msg]
   (fn update-msg-agent [db]
@@ -25,7 +23,8 @@
         ;; have the room already
         (do
           (swap! (db room) (fn update-msg-atom [q]
-                             (conj (if (>= (count q) max-msgs-per-room)
+                             (conj (if (>= (count q)
+                                           (config :catchup :max-msgs-per-room))
                                      (pop q)
                                      q)
                                    text)))
@@ -35,7 +34,6 @@
                                  (conj text))))))))
 
 (defn add-msg [room-name msg]
-  (println :adding msg :to room-name)
   (send msg-db-agent
         (add-msg-fn {:room room-name :msg msg})))
 
@@ -91,10 +89,18 @@
 (add-hook ::catchup 'nick-hook catchup-log)
 (add-hook ::catchup 'topic-hook catchup-log)
 
-(defcommand catchup [channel room]
-  (println :catchup room)
-  (if room
-    (println :msgs (messages-for room))
-    (raise {:type :client-error
-            :code 999
-            :msg ":No room given"})))
+(defcommand catchup [channel args]
+  (let [[room size] (.split args " ")
+        size (try (Integer/parseInt size)
+                  (catch Exception _
+                    (config :catchup :default-catchup-size)))]
+    (if room
+      (do
+        (send-to-client channel 999 (str "*** Catchup Playback for " room ":"))
+        (doseq [msg (take (or size (config :catchup :default-catchup-size))
+                          (messages-for room))]
+          (send-to-client channel 999 msg))
+        (send-to-client channel 999 "*** Catchup Complete."))
+      (raise {:type :client-error
+              :code 999
+              :msg ":No room given"}))))
