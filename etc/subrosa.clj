@@ -7,5 +7,4 @@
                         :directory "log"}
            :catchup {:enabled? true
                      :max-msgs-per-room 20
-                     :default-catchup-size 10
-                     :time-format "HH:mm:ss"}}}
+                     :default-playback-size 10}}}

@@ -7,8 +7,8 @@
   (:import (java.util Date)
            (java.text SimpleDateFormat)))
 
-(defn- format-time []
-  (.format (SimpleDateFormat. (config :plugins :catchup :time-format)) (Date.)))
+(defn format-time []
+  (.format (SimpleDateFormat. "HH:mm:ss") (Date.)))
 
 (def msg-db-agent (agent {}))
 
@@ -92,9 +92,10 @@
 
 (when (config :plugins :catchup :enabled?)
   (add-hooks)
+
   (defcommand catchup [channel args]
     (let [[room size] (.split args " ")
-          default-size (config :plugins :catchup :default-catchup-size)
+          default-size (config :plugins :catchup :default-playback-size)
           size (try (Integer/parseInt size)
                     (catch Exception _ default-size))
           begin (format ":%s PRIVMSG %s :%s" (format-client channel)
