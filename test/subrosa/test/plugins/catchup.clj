@@ -38,7 +38,7 @@
     (transmit s1 "PRIVMSG #foo :Hello, World!")
     (Thread/sleep 500)
     (transmit s1 "CATCHUP #bar")
-    (is (received? s1 #"No room given or room does not exist"))
+    (is (received? s1 #"You are not in that room"))
     (Thread/sleep 500)
     (transmit s1 "CATCHUP #foo not-a-number")
     (is (received? s1 #"Hello, World!"))
