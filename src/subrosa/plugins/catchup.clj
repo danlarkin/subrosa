@@ -96,22 +96,26 @@
   (defcommand catchup [channel args]
     (let [[room size] (.split args " ")
           default-size (config :plugins :catchup :default-playback-size)
-          size (try (Integer/parseInt size)
-                    (catch Exception _ default-size))
-          begin (format ":%s PRIVMSG %s :%s" (format-client channel)
-                        room (str "*** Catchup Playback for " room ":"))
-          end (format ":%s PRIVMSG %s :%s" (format-client channel)
-                      room (str "*** Catchup Complete."))]
-      (if (room-for-name room)
-        (let [all-messages (messages-for room)
-              msgs (drop (- (count all-messages) (or size default-size))
-                         all-messages)]
-          (send-to-client* channel begin)
-          (doseq [m msgs]
-            (send-to-client* channel
-                             (format ":%s PRIVMSG %s :%s"
-                                     (format-client channel) room m)))
-          (send-to-client* channel end))
-        (raise {:type :client-error
-                :code 999
-                :msg ":No room given or room does not exist"})))))
+          size (try (Integer/parseInt size) (catch Exception _ default-size))
+          nick (nick-for-channel channel)
+          rooms (if (= "" room) (rooms-for-nick nick) [room])]
+      (doseq [room rooms]
+        (let [begin (format ":%s PRIVMSG %s :%s" (format-client channel)
+                            room (str "*** Catchup Playback for " room ":"))
+              end (format ":%s PRIVMSG %s :%s" (format-client channel)
+                          room (str "*** Catchup Complete."))]
+          (when-not (nick-in-room? nick room)
+            (raise {:type :client-error
+                    :code 999
+                    :msg ":You are not in that room"}))
+          (let [all-msgs (if (config :plugins :catchup :ignore-non-chat-msgs)
+                           (remove #(re-find #"^---" %) (messages-for room))
+                           (messages-for room))
+                msgs-to-skip (- (count all-msgs) (or size default-size))
+                msgs (drop msgs-to-skip all-msgs)]
+            (send-to-client* channel begin)
+            (doseq [m msgs]
+              (send-to-client* channel
+                               (format ":%s PRIVMSG %s :%s"
+                                       (format-client channel) room m)))
+            (send-to-client* channel end)))))))
