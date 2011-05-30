@@ -32,7 +32,7 @@
     (Thread/sleep 500)
     (transmit s1 "PRIVMSG #foo :Hello, World!")
     (transmit s1 "CATCHUP #bar")
-    (is (received? s1 #"You are not in that room"))
+    (is (received? s1 #"You're not on that channel"))
     (transmit s1 "CATCHUP #foo not-a-number")
     (is (received? s1 #"Hello, World!"))
     (transmit s1 "PART #foo")

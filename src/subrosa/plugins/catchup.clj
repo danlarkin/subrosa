@@ -23,9 +23,9 @@
 (defn add-message [hook channel room-name msg]
   (dosync
    (commute buffer update-in [room-name] maybe-conj [(nick-for-channel channel)
-                                                    (format "[%s] %s"
-                                                            (format-time)
-                                                            msg)])))
+                                                     (format "[%s] %s"
+                                                             (format-time)
+                                                             msg)])))
 
 (defn add-hooks []
   (add-hook ::catchup 'privmsg-room-hook add-message))
@@ -56,5 +56,5 @@
             (send-to-client*
              channel (format ":*** PRIVMSG %s :%s" room "Catchup Complete")))
           (raise {:type :client-error
-                  :code 999
-                  :msg ":You are not in that room"}))))))
+                  :code 442
+                  :msg (format "%s :You're not on that channel" room)}))))))
