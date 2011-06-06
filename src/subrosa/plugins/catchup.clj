@@ -27,9 +27,9 @@
              (if (= hook 'privmsg-room-hook)
                "PRIVMSG"
                "NOTICE")
-             (format "[%s] %s"
-                     (format-time)
-                     msg)])))
+             (if-let [msg (second (re-find #"^\u0001ACTION (.*)\u0001$" msg))]
+               (format "\u0001ACTION [%s] %s\u0001" (format-time) msg)
+               (format "[%s] %s" (format-time) msg))])))
 
 (defn add-hooks []
   (add-hook ::catchup 'privmsg-room-hook add-message)
