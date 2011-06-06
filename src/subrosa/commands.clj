@@ -207,23 +207,23 @@
 (defcommand privmsg [channel args]
   (let [[recipient received-msg] (.split args " " 2)
         msg (format ":%s PRIVMSG %s %s"
-                    (format-client channel) recipient received-msg)
-        plain-msg (subs received-msg 1)]
+                    (format-client channel) recipient received-msg)]
     (if (not (empty? recipient))
       (if (not (nil? received-msg))
-        (if (room-for-name recipient)
-          (do
-            (send-to-room-except recipient msg channel)
-            (run-hook 'privmsg-room-hook
-                      channel recipient plain-msg))
-          (if-let [channel (channel-for-nick recipient)]
+        (let [plain-msg (subs received-msg 1)]
+          (if (room-for-name recipient)
             (do
-              (send-to-client* channel msg)
-              (run-hook 'privmsg-nick-hook
+              (send-to-room-except recipient msg channel)
+              (run-hook 'privmsg-room-hook
                         channel recipient plain-msg))
-            (raise {:type :client-error
-                    :code 401
-                    :msg (format "%s :No such nick/channel" recipient)})))
+            (if-let [channel (channel-for-nick recipient)]
+              (do
+                (send-to-client* channel msg)
+                (run-hook 'privmsg-nick-hook
+                          channel recipient plain-msg))
+              (raise {:type :client-error
+                      :code 401
+                      :msg (format "%s :No such nick/channel" recipient)}))))
         (raise {:type :client-error
                 :code 412
                 :msg ":No text to send"}))

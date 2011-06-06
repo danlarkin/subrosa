@@ -22,13 +22,18 @@
 
 (defn add-message [hook channel room-name msg]
   (dosync
-   (commute buffer update-in [room-name] maybe-conj [(nick-for-channel channel)
-                                                     (format "[%s] %s"
-                                                             (format-time)
-                                                             msg)])))
+   (commute buffer update-in [room-name] maybe-conj
+            [(nick-for-channel channel)
+             (if (= hook 'privmsg-room-hook)
+               "PRIVMSG"
+               "NOTICE")
+             (format "[%s] %s"
+                     (format-time)
+                     msg)])))
 
 (defn add-hooks []
-  (add-hook ::catchup 'privmsg-room-hook add-message))
+  (add-hook ::catchup 'privmsg-room-hook add-message)
+  (add-hook ::catchup 'notice-room-hook add-message))
 
 (when (config :plugins :catchup :enabled?)
   (add-hooks)
@@ -49,10 +54,10 @@
           (do
             (send-to-client*
              channel (format ":*** PRIVMSG %s :%s" room "Catchup Playback"))
-            (doseq [[sender msg] (take-last size (@buffer room))]
+            (doseq [[sender type msg] (take-last size (@buffer room))]
               (send-to-client* channel
-                               (format ":%s PRIVMSG %s :%s"
-                                       sender room msg)))
+                               (format ":%s %s %s :%s"
+                                       sender type room msg)))
             (send-to-client*
              channel (format ":*** PRIVMSG %s :%s" room "Catchup Complete")))
           (raise {:type :client-error
