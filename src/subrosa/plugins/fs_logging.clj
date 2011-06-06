@@ -31,7 +31,9 @@
 (defmulti log (fn [& args] (first args)))
 
 (defmethod log 'privmsg-room-hook [hook channel room-name msg]
-  (append room-name (format "<%s> %s" (nick-for-channel channel) msg)))
+  (if-let [action (second (re-find #"^\u0001ACTION (.*)\u0001$" msg))]
+    (append room-name (format "*%s %s" (nick-for-channel channel) action))
+    (append room-name (format "<%s> %s" (nick-for-channel channel) msg))))
 
 (defmethod log 'notice-room-hook [hook channel room-name msg]
   (append room-name (format "-%s- %s" (nick-for-channel channel) msg)))

@@ -38,6 +38,8 @@
       (Thread/sleep 500)
       (transmit s2 "NOTICE #foo :Hey, this is a notice")
       (Thread/sleep 500)
+      (transmit s2 "PRIVMSG #foo :\u0001ACTION sends an action\u0001")
+      (Thread/sleep 500)
       (transmit s1 "NICK superdan")
       (Thread/sleep 500)
       (transmit s1 "PRIVMSG #foo :new nick!")
@@ -48,9 +50,9 @@
       (Thread/sleep 500)
       (transmit s2 "QUIT")))
   (Thread/sleep 1000)
-  (let [[l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 :as lines]
+  (let [[l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 :as lines]
         (.split (slurp (get-log-name "#foo")) "\n")]
-    (is (= 10 (count lines)))
+    (is (= 11 (count lines)))
     (is (= l1
            "19:16:45 --- join: dan (dan!dan@localhost) joined #foo"))
     (is (= l2
@@ -58,8 +60,9 @@
     (is (= l3 "19:16:45 <dan> Hello, World!"))
     (is (= l4 "19:16:45 <dan2> Oh sweet. I see you, dan!"))
     (is (= l5 "19:16:45 -dan2- Hey, this is a notice"))
-    (is (= l6 "19:16:45 --- nick: dan is now known as superdan"))
-    (is (= l7 "19:16:45 <superdan> new nick!"))
-    (is (= l8 "19:16:45 --- topic: superdan set the topic to \"new topic!\""))
-    (is (= l9 "19:16:45 --- part: superdan left #foo"))
-    (is (= l10 "19:16:45 --- quit: dan2 (Quit: Client Quit)"))))
+    (is (= l6 "19:16:45 *dan2 sends an action"))
+    (is (= l7 "19:16:45 --- nick: dan is now known as superdan"))
+    (is (= l8 "19:16:45 <superdan> new nick!"))
+    (is (= l9 "19:16:45 --- topic: superdan set the topic to \"new topic!\""))
+    (is (= l10 "19:16:45 --- part: superdan left #foo"))
+    (is (= l11 "19:16:45 --- quit: dan2 (Quit: Client Quit)"))))
