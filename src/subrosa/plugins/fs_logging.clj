@@ -33,6 +33,9 @@
 (defmethod log 'privmsg-room-hook [hook channel room-name msg]
   (append room-name (format "<%s> %s" (nick-for-channel channel) msg)))
 
+(defmethod log 'notice-room-hook [hook channel room-name msg]
+  (append room-name (format "-%s- %s" (nick-for-channel channel) msg)))
+
 (defmethod log 'join-hook [hook channel room-name]
   (append room-name
           (format "--- join: %s (%s) joined %s"
@@ -66,6 +69,7 @@
 
 (defn add-hooks []
   (add-hook ::logging 'privmsg-room-hook log)
+  (add-hook ::logging 'notice-room-hook log)
   (add-hook ::logging 'join-hook log)
   (add-hook ::logging 'part-hook log)
   (add-hook ::logging 'quit-hook log)

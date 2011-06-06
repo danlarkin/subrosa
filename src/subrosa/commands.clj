@@ -207,19 +207,20 @@
 (defcommand privmsg [channel args]
   (let [[recipient received-msg] (.split args " " 2)
         msg (format ":%s PRIVMSG %s %s"
-                    (format-client channel) recipient received-msg)]
+                    (format-client channel) recipient received-msg)
+        plain-msg (subs received-msg 1)]
     (if (not (empty? recipient))
       (if (not (nil? received-msg))
         (if (room-for-name recipient)
           (do
             (send-to-room-except recipient msg channel)
             (run-hook 'privmsg-room-hook
-                      channel recipient (subs received-msg 1)))
+                      channel recipient plain-msg))
           (if-let [channel (channel-for-nick recipient)]
             (do
               (send-to-client* channel msg)
               (run-hook 'privmsg-nick-hook
-                        channel recipient (subs received-msg 1)))
+                        channel recipient plain-msg))
             (raise {:type :client-error
                     :code 401
                     :msg (format "%s :No such nick/channel" recipient)})))
@@ -233,17 +234,17 @@
 (defcommand notice [channel args]
   (let [[recipient received-msg] (.split args " " 2)
         msg (format ":%s NOTICE %s %s"
-                    (format-client channel) recipient received-msg)
-        plain-msg (subs msg 1)]
+                    (format-client channel) recipient received-msg)]
     (when (and (not (empty? recipient))
                (not (nil? received-msg)))
-      (if (room-for-name recipient)
-        (do
-          (send-to-room-except recipient msg channel)
-          (run-hook 'notice-room-hook channel recipient plain-msg))
-        (when-let [chan (channel-for-nick recipient)]
-          (send-to-client* chan msg)
-          (run-hook 'notice-nick-hook chan recipient plain-msg))))))
+      (let [plain-msg (subs received-msg 1)]
+        (if (room-for-name recipient)
+          (do
+            (send-to-room-except recipient msg channel)
+            (run-hook 'notice-room-hook channel recipient plain-msg))
+          (when-let [chan (channel-for-nick recipient)]
+            (send-to-client* chan msg)
+            (run-hook 'notice-nick-hook chan recipient plain-msg)))))))
 
 (defcommand ping [channel server]
   (if (not (empty? server))
