@@ -45,11 +45,11 @@
                   (format-client channel)
                   room-name)))
 
-(defmethod log 'part-hook [hook channel room-name]
+(defmethod log 'part-hook [hook channel room-name part-message]
   (append room-name
-          (format "--- part: %s left %s"
+          (format "--- part: %s (Part: %s)"
                   (nick-for-channel channel)
-                  room-name)))
+                  part-message)))
 
 (defmethod log 'quit-hook [hook channel quit-msg]
   (doseq [room-name (rooms-for-nick (nick-for-channel channel))]

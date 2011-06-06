@@ -308,8 +308,9 @@
 
 (defcommand part [channel command]
   (let [[rooms-string part-message] (.split command ":" 2)
-        rooms (map (memfn trim) (.split rooms-string ","))
-        nick (nick-for-channel channel)]
+        nick (nick-for-channel channel)
+        part-message (or part-message nick)
+        rooms (map (memfn trim) (.split rooms-string ","))]
     (doseq [room rooms]
       (if (not (empty? room))
         (if (room-for-name room)
@@ -318,9 +319,9 @@
              (send-to-room room (format ":%s PART %s :%s"
                                         (format-client channel)
                                         room
-                                        (or part-message nick)))
+                                        part-message))
              (remove-nick-from-room! nick room)
-             (run-hook 'part-hook channel room))
+             (run-hook 'part-hook channel room part-message))
             (raise {:type :client-error
                     :code 442
                     :msg (format "%s :You're not on that channel" room)}))

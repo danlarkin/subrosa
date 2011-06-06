@@ -64,5 +64,5 @@
     (is (= l7 "19:16:45 --- nick: dan is now known as superdan"))
     (is (= l8 "19:16:45 <superdan> new nick!"))
     (is (= l9 "19:16:45 --- topic: superdan set the topic to \"new topic!\""))
-    (is (= l10 "19:16:45 --- part: superdan left #foo"))
+    (is (= l10 "19:16:45 --- part: superdan (Part: superdan)"))
     (is (= l11 "19:16:45 --- quit: dan2 (Quit: Client Quit)"))))
