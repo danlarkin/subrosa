@@ -116,6 +116,31 @@
       (transmit s2 "QUIT")
       (is (received? s1 #":dan2!dan@.* QUIT :Client Quit")))))
 
+(deftest quit-messages-work
+  (with-connection s1
+    (transmit s1 "NICK dan1")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (Thread/sleep 1000) ; Give dan1 a chance to authenticate
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "QUIT")
+      (is (received? s1 #":dan2!dan@.* QUIT :Client Quit")))
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "QUIT :I'm outta here!")
+      (is (received? s1 #":dan2!dan@.* QUIT :I'm outta here")))
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (.close (:socket s2))
+      (is (received? s1 #":dan2!dan@.* QUIT :Client Disconnect")))))
+
 (deftest quit-should-leave-rooms
   (with-connection s1
     (transmit s1 "NICK dan1")

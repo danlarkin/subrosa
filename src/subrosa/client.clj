@@ -13,6 +13,13 @@
 (defn agent-for-channel [channel]
   (-> channel user-for-channel :agent))
 
+(defn quit-message-for-channel [channel]
+  (-> channel user-for-channel :quit-message))
+
+(defn add-quit-message-for-channel! [channel quit-message]
+  (let [user (user-for-channel channel)]
+    (db/put :user (assoc user :quit-message quit-message))))
+
 (defn user-for-nick [nick]
   (db/get :user :nick nick))
 
@@ -35,6 +42,7 @@
   (db/put :user {:nick nil
                  :real-name nil
                  :user-name nil
+                 :quit-message nil
                  :channel channel
                  :agent (agent "jack bauer")
                  :pending? #{}}))
@@ -202,10 +210,11 @@
     (send-to-client* chan msg)))
 
 (defn send-to-clients-in-rooms-for-nick [nick msg channel]
-  (doseq [chan (into #{} (for [room-name (rooms-for-nick nick)
-                               chan (channels-in-room room-name)
-                               :when (and chan (not= chan channel))]
-                           chan))]
+  (doseq [chan (clojure.set/difference
+                (into #{} (for [room-name (rooms-for-nick nick)
+                                chan (channels-in-room room-name)]
+                            chan))
+                #{channel})]
     (send-to-client* chan msg)))
 
 (defn set-topic-for-room! [room-name topic]

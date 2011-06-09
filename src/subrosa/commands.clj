@@ -108,24 +108,25 @@
             :disconnect true
             :msg ":Unauthorized command (already registered)"})))
 
-(defn quit [channel quit-msg close-channel? send-to-self? send-to-others?]
+(defn quit [channel]
   (let [nick (nick-for-channel channel)
-        msg (format ":%s QUIT :Client Quit"
-                    (format-client channel))]
-    (when send-to-others?
-      (send-to-clients-in-rooms-for-nick
-       nick msg channel))
-    (let [chan-future-agent (when send-to-self?
-                              (send-to-client* channel msg))]
-      (when chan-future-agent
-        (await chan-future-agent))
-      (when send-to-others?
-        (run-hook 'quit-hook channel "Client Quit"))
-      (when (and close-channel? chan-future-agent)
-        (.addListener @chan-future-agent (ChannelFutureListener/CLOSE))))))
+        quit-message (or (quit-message-for-channel channel)
+                         "Client Disconnect")
+        msg (format ":%s QUIT :%s" (format-client channel) quit-message)]
+    (send-to-clients-in-rooms-for-nick nick msg channel)
+    (run-hook 'quit-hook channel quit-message)))
 
-(defcommand quit [channel quit-msg]
-  (quit channel quit-msg true true false))
+(defcommand quit [channel quit-message]
+  (let [quit-message (if-not (empty? quit-message)
+                       (subs quit-message 1)
+                       "Client Quit")
+        msg (format ":%s QUIT :%s" (format-client channel) quit-message)]
+    (dosync
+     (add-quit-message-for-channel! channel quit-message))
+    (when (.isConnected channel) ; client could send QUIT and then close socket
+      (let [chan-future-agent (send-to-client* channel msg)]
+        (await chan-future-agent)
+        (.addListener @chan-future-agent (ChannelFutureListener/CLOSE))))))
 
 (defcommand join [channel args]
   (let [[rooms keys extra-args] (.split args " ")]

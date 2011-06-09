@@ -5,7 +5,7 @@
            [java.net InetAddress]))
 
 ;; database schema:
-;; :user => [:nick :real-name :user-name :channel :pending?]
+;; :user => [:nick :real-name :user-name :quit-message :channel :pending?]
 ;; :room => [:name :topic]
 ;; :user-in-room => [:user-nick :room-name]
 
