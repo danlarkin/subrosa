@@ -48,10 +48,14 @@
       (Thread/sleep 500)
       (transmit s1 "PART #foo")
       (Thread/sleep 500)
+      (transmit s1 "JOIN #foo")
+      (Thread/sleep 500)
+      (transmit s2 "KICK #foo superdan :Bye, Jerk!")
+      (Thread/sleep 500)
       (transmit s2 "QUIT :I'm outta here")))
   (Thread/sleep 1000)
   (let [lines (.split (slurp (get-log-name "#foo")) "\n")]
-    (is (= 11 (count lines)))
+    (is (= 13 (count lines)))
     (is (=  (vec lines)
             ["19:16:45 --- join: dan (dan!dan@localhost) joined #foo"
              "19:16:45 --- join: dan2 (dan2!dan@localhost) joined #foo"
@@ -63,4 +67,6 @@
              "19:16:45 <superdan> new nick!"
              "19:16:45 --- topic: superdan set the topic to \"new topic!\""
              "19:16:45 --- part: superdan (Part: superdan)"
+             "19:16:45 --- join: superdan (superdan!dan@localhost) joined #foo"
+             "19:16:45 --- kick: superdan (Bye, Jerk!) by dan2"
              "19:16:45 --- quit: dan2 (Quit: I'm outta here)"]))))

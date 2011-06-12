@@ -51,6 +51,13 @@
                   (nick-for-channel channel)
                   part-message)))
 
+(defmethod log 'kick-hook [hook channel room-name nick-name kick-message]
+  (append room-name
+          (format "--- kick: %s (%s) by %s"
+                  nick-name
+                  kick-message
+                  (nick-for-channel channel))))
+
 (defmethod log 'quit-hook [hook channel quit-msg]
   (doseq [room-name (rooms-for-nick (nick-for-channel channel))]
     (append room-name
@@ -74,6 +81,7 @@
   (add-hook ::logging 'notice-room-hook log)
   (add-hook ::logging 'join-hook log)
   (add-hook ::logging 'part-hook log)
+  (add-hook ::logging 'kick-hook log)
   (add-hook ::logging 'quit-hook log)
   (add-hook ::logging 'nick-hook log)
   (add-hook ::logging 'topic-hook log))
