@@ -262,3 +262,94 @@
       (transmit s "INVITE dan2 #foo")
       (is (received? s2 #"dan!dan@.* INVITE dan2 #foo"))
       (is (received? s #"341 dan #foo dan2")))))
+
+(deftest kick-with-no-comment
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #bam")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #bam")
+      (Thread/sleep 1000)
+      (transmit s "KICK #bam dan2")
+      (is (received? s2 #"dan!dan@.* KICK #bam dan2 :dan"))
+      (is (received? s #"dan!dan@.* KICK #bam dan2 :dan"))
+      (transmit s "NAMES #bam")
+      (is (received? s #"353 dan = #bam :dan")))))
+
+(deftest kick-with-comment
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #bam")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #bam")
+      (Thread/sleep 1000)
+      (transmit s "KICK #bam dan2 :Bye, jerk!")
+      (is (received? s2 #"dan!dan@.* KICK #bam dan2 :Bye, jerk!"))
+      (is (received? s #"dan!dan@.* KICK #bam dan2 :Bye, jerk!"))
+      (transmit s "NAMES #bam")
+      (is (received? s #"353 dan = #bam :dan")))))
+
+(deftest kick-with-comment
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #bam")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #bam")
+      (Thread/sleep 1000)
+      (transmit s "KICK #bam dan2 :Bye, jerk!")
+      (is (received? s2 #"dan!dan@.* KICK #bam dan2 :Bye, jerk!"))
+      (is (received? s #"dan!dan@.* KICK #bam dan2 :Bye, jerk!"))
+      (transmit s "NAMES #bam")
+      (is (received? s #"353 dan = #bam :dan")))))
+
+(deftest kick-with-bad-syntax
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #bam")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #bam")
+      (Thread/sleep 1000)
+      (transmit s "KICK")
+      (is (received? s #"461 dan KICK :Not enough parameters"))
+      (reset! (:received s) [])
+      (transmit s "KICK #bam")
+      (is (received? s #"461 dan KICK :Not enough parameters"))
+      (reset! (:received s) [])
+      (transmit s "KICK #bam,#foo")
+      (is (received? s #"461 dan KICK :Not enough parameters"))
+      (reset! (:received s) [])
+      (transmit s "KICK #bam,#foo dan2")
+      (is (received? s #"461 dan KICK :Not enough parameters"))
+      (reset! (:received s) []))))
+
+(deftest kick-error-conditions
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #bam")
+    (transmit s "JOIN #supercool")
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #bam")
+      (transmit s2 "JOIN #bam2")
+      (Thread/sleep 1000)
+      (transmit s "KICK #foo dan2")
+      (is (received? s #"403 dan \#foo :No such channel"))
+      (transmit s "KICK #bam2 dan2")
+      (is (received? s #"442 dan \#bam2 :You're not on that channel"))
+      (transmit s "KICK #supercool dan2")
+      (is (received?
+           s #"441 dan dan2 \#supercool :They aren't on that channel")))))

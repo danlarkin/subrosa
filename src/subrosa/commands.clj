@@ -405,3 +405,55 @@
       (raise {:type :client-error
               :code 461
               :msg  "INVITE :Not enough parameters"}))))
+
+(defcommand kick [channel args]
+  (let [[rooms nicks comment] (.split args " " 3)]
+    (if (and rooms nicks)
+      (let [rooms (.split rooms ",")
+            nicks (.split nicks ",")
+            comment (or (and comment (subs comment 1))
+                        (nick-for-channel channel))
+            do-kick (fn [nick room]
+                      (if (room-for-name room)
+                        (if (nick-in-room? (nick-for-channel channel) room)
+                          (if (nick-in-room? nick room)
+                            (dosync
+                             (send-to-room room (format ":%s KICK %s %s :%s"
+                                                        (format-client channel)
+                                                        room
+                                                        nick
+                                                        comment))
+                             (remove-nick-from-room! nick room)
+                             (run-hook 'kick-hook channel room nick comment))
+                            (raise {:type :client-error
+                                    :code 441
+                                    :msg (format
+                                          "%s %s :They aren't on that channel"
+                                          nick
+                                          room)}))
+                          (raise {:type :client-error
+                                  :code 442
+                                  :msg (format "%s :You're not on that channel"
+                                               room)}))
+                        (raise {:type :client-error
+                                :code 403
+                                :msg (format "%s :No such channel" room)})))]
+        (cond
+         (and (= 1 (count rooms))
+              (>= 1 (count nicks)))
+         (doseq [nick nicks]
+           (do-kick nick
+                    (first rooms)))
+
+         (= (count rooms) (count nicks))
+         (doseq [[room nick] (zipmap rooms nicks)]
+           (do-kick nick room))
+
+         :else (raise {:type :client-error
+                       :code 461
+                       :msg  "KICK :Not enough parameters"})))
+      (raise {:type :client-error
+              :code 461
+              :msg  "KICK :Not enough parameters"}))))
+
+
