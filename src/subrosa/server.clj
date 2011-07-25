@@ -10,7 +10,10 @@
 ;; :user-in-room => [:user-nick :room-name]
 
 (defonce server {:host (config :host)
-                 :version (str "subrosa-" (.trim (slurp "etc/version.txt")))
+                 :version (try
+                            (str "subrosa-" (.trim (slurp "etc/version.txt")))
+                            (catch Exception e
+                              "subrosa-UNKNOWN"))
                  :started (Date.)})
 
 (defn reset-all-state! []
