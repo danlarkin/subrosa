@@ -353,3 +353,24 @@
       (transmit s "KICK #supercool dan2")
       (is (received?
            s #"441 dan dan2 \#supercool :They aren't on that channel")))))
+
+(deftest private-rooms-dont-show-in-list
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #foo")
+    (transmit s "JOIN #foo-")
+    (transmit s "LIST")
+    (is (received? s #"322 dan #foo 1 :"))
+    (is (not-received? s #"322 dan #foo- 1 :"))))
+
+(deftest private-rooms-dont-show-in-whois
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #foo")
+    (transmit s "JOIN #foo-")
+    (transmit s "WHOIS dan")
+    (is (received? s #"311 dan dan .* \* :Dan Larkin"))
+    (is (received? s #"319 dan dan :#foo"))
+    (is (received? s #":End of WHOIS list"))))

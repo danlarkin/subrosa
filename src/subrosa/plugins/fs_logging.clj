@@ -21,12 +21,13 @@
     (str log-dir "/" room-name "_" (format-date) ".log")))
 
 (defn append [room-name msg]
-  (send io-agent
-        (fn [_]
-          (io!
-           (with-open [out (FileWriter. (get-log-name room-name) true)]
-             (.write out (.toCharArray
-                          (str (format-time) " " msg "\n"))))))))
+  (when-not (room-is-private? room-name)
+    (send io-agent
+          (fn [_]
+            (io!
+             (with-open [out (FileWriter. (get-log-name room-name) true)]
+               (.write out (.toCharArray
+                            (str (format-time) " " msg "\n")))))))))
 
 (defmulti log (fn [& args] (first args)))
 

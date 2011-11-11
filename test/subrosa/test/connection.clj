@@ -232,11 +232,12 @@
     (with-connection s2
       (transmit s2 "NICK awesomedan")
       (transmit s2 "USER dan2 0 * :Dan Larkin2")
+      (transmit s2 "JOIN #foo")
       (transmit s2 "WHO")
       (is (received?
            s2 #"352 awesomedan \* dan .* .* superdan H :0 Dan Larkin"))
       (is (received?
-           s2 #"352 awesomedan \* dan2 .* .* awesomedan H :0 Dan Larkin2"))
+           s2 #"352 awesomedan \#foo dan2 .* .* awesomedan H :0 Dan Larkin2"))
       (is (received? s2 #"315 awesomedan \* :End of WHO list")))))
 
 (deftest who-command-for-an-empty-channel

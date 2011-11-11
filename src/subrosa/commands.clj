@@ -266,7 +266,7 @@
       (let [nick (:nick user)
             user-name (:user-name user)
             real-name (:real-name user)
-            rooms (rooms-for-nick nick)
+            rooms (remove room-is-private? (rooms-for-nick nick))
             hostname (format-hostname (:channel user))]
         (send-to-client channel 311 (format "%s %s * :%s"
                                             user-name
@@ -299,7 +299,8 @@
       ;; ":Users" and "Name"
       (send-to-client channel 321 "Channel :Users  Name")
       (doseq [room-name rooms
-              :when (room-for-name room-name)]
+              :when (and (room-for-name room-name)
+                         (not (room-is-private? room-name)))]
         (send-to-client channel 322 (format "%s %s :%s"
                                             room-name
                                             (count (nicks-in-room room-name))
@@ -349,8 +350,12 @@
     (doseq [{:keys [nick real-name user-name] :as user} users]
       (send-to-client channel 352 (format "%s %s %s %s %s H :0 %s"
                                           (if (= room-name-for-reply "*")
-                                            room-name-for-reply
-                                            (first (rooms-for-nick nick)))
+                                            (or
+                                             (first
+                                              (remove room-is-private?
+                                                      (rooms-for-nick nick)))
+                                             room-name-for-reply)
+                                            room-name-for-reply)
                                           user-name
                                           (format-hostname (:channel user))
                                           (hostname)

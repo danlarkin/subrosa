@@ -163,7 +163,10 @@
 (defn maybe-create-room! [room-name]
   (when-not (room-for-name room-name)
     (db/put :room {:name room-name
-                   :topic nil})))
+                   :topic nil
+                   :mode (if (.endsWith room-name "-")
+                           #{:private}
+                           #{})})))
 
 (defn maybe-delete-room! [room-name]
   (when-not (seq (db/get :user-in-room :room-name room-name))
@@ -192,6 +195,12 @@
 
 (defn topic-for-room [room-name]
   (:topic (room-for-name room-name)))
+
+(defn mode-for-room [room-name]
+  (:mode (room-for-name room-name)))
+
+(defn room-is-private? [room-name]
+  (:private (mode-for-room room-name)))
 
 (defn nicks-in-room [room-name]
   (map :user-nick (db/get :user-in-room :room-name room-name)))

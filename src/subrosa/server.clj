@@ -6,7 +6,7 @@
 
 ;; database schema:
 ;; :user => [:nick :real-name :user-name :quit-message :channel :pending?]
-;; :room => [:name :topic]
+;; :room => [:name :topic :mode]
 ;; :user-in-room => [:user-nick :room-name]
 
 (defonce server {:host (config :host)
