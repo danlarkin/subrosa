@@ -5,5 +5,7 @@
 
 (defn -main []
   (let [{:keys [start-fn stop-fn]} (create-server (config :port))]
+    (print "Starting Subrosa... ")
     (start-fn)
-    (.addShutdownHook (Runtime/getRuntime) (Thread. stop-fn))))
+    (.addShutdownHook (Runtime/getRuntime) (Thread. stop-fn))
+    (println "done.")))

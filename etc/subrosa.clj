@@ -8,4 +8,6 @@
                         :directory "log"}
            :catchup {:enabled? true
                      :max-msgs-per-room 20
-                     :default-playback-size 10}}}
+                     :default-playback-size 10}
+           :swank {:enabled? false
+                   :port 4005}}}

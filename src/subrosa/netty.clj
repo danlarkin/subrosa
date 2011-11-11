@@ -143,7 +143,6 @@
       (.setOption "child.keepAlive" true))
     (load-plugins)
     {:start-fn (fn []
-                 (println "Starting Subrosa.")
                  (reset-all-state!)
                  (->> port
                       InetSocketAddress.
