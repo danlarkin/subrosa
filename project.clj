@@ -7,4 +7,4 @@
                  [org.clojure/clojure-contrib "1.2.0"]
                  [org.jboss.netty/netty "3.2.1.Final"]
                  [swank-clojure "1.3.2"]]
-  :dev-dependencies [[lein-release "1.1.1"]])
+  :dev-dependencies [[lein-tar "1.0.5"]])
