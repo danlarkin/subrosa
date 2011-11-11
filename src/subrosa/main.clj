@@ -1,8 +1,9 @@
 (ns subrosa.main
   (:gen-class)
-  (use [subrosa.netty :only [create-server]]))
+  (use [subrosa.config :only [config]]
+       [subrosa.netty :only [create-server]]))
 
-(defn -main [port]
-  (let [{:keys [start-fn stop-fn]} (create-server (Integer/parseInt port))]
+(defn -main []
+  (let [{:keys [start-fn stop-fn]} (create-server (config :port))]
     (start-fn)
     (.addShutdownHook (Runtime/getRuntime) (Thread. stop-fn))))

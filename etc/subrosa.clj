@@ -1,4 +1,5 @@
-{:host "localhost"
+{:port 6667
+ :host "localhost"
  :network "Subrosa"
  :ssl {:keystore nil
        :password nil}
