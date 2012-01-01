@@ -50,7 +50,8 @@
                   (rooms-for-nick nick)
                   [room])]
       (doseq [room rooms]
-        (if (nick-in-room? nick room)
+        (if (and (nick-in-room? nick room)
+                 (not (room-is-private? room)))
           (do
             (send-to-client*
              channel (format ":*** PRIVMSG %s :%s" room "Catchup Playback"))

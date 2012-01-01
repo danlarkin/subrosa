@@ -11,6 +11,9 @@
       (transmit s1 "USER lee 0 * :Lee Hinmanm")
       (transmit s1 "JOIN #foo")
       (Thread/sleep 500)
+      (transmit s1 "JOIN #bar-")
+      (Thread/sleep 500)
+      (transmit s1 "PRIVMSG #bar- :Hey, bar private chat")
       (transmit s1 "PRIVMSG #foo :Hello, World!")
       (transmit s1 "NOTICE #foo :Hey, it's a notice!")
       (transmit s1 "PRIVMSG #foo :\u0001ACTION says hi\u0001")
@@ -25,6 +28,8 @@
       (is (received? s1 #"PRIVMSG #foo :\[.*\] Hello, World!"))
       (is (received? s1 #"NOTICE #foo :\[.*\] Hey, it's a notice!"))
       (is (received? s1 #"PRIVMSG #foo :\u0001ACTION \[.*\] says hi\u0001"))
+      (transmit s1 "CATCHUP #bar-")
+      (is (not-received? s1 #"PRIVMSG #bar- :\[.*\] Hey, bar private chat"))
       (transmit s1 "PART #foo")
       (transmit s1 "QUIT"))))
 
