@@ -13,6 +13,9 @@
                  :version (str "subrosa-" (.trim (slurp "etc/version.txt")))
                  :started (Date.)})
 
+(def supported-room-modes #{\p})
+;; p -> private
+
 (defn reset-all-state! []
   (alter-var-root #'server assoc :started (Date.))
   (dosync (ref-set db/db {}))

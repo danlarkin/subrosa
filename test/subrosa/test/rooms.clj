@@ -374,3 +374,21 @@
     (is (received? s #"311 dan dan .* \* :Dan Larkin"))
     (is (received? s #"319 dan dan :#foo"))
     (is (received? s #":End of WHOIS list"))))
+
+(deftest mode-tests
+  (with-connection s
+    (transmit s "NICK dan")
+    (transmit s "USER dan 0 * :Dan Larkin")
+    (transmit s "JOIN #foo")
+    (transmit s "MODE #foo")
+    (is (received? s #"324 dan #foo +"))
+    (transmit s "MODE #foo p")
+    (is (received? s #"MODE #foo \+p"))
+    (reset! (:received s) [])
+    (transmit s "MODE #foo +p")
+    (is (not-received? s #"MODE #foo \+p"))
+    (transmit s "MODE #foo -p")
+    (is (received? s #"MODE #foo \-p"))
+    (reset! (:received s) [])
+    (transmit s "MODE #foo -p")
+    (is (not-received? s #"MODE #foo \-p"))))

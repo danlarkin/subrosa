@@ -165,7 +165,7 @@
     (db/put :room {:name room-name
                    :topic nil
                    :mode (if (.endsWith room-name "-")
-                           #{:private}
+                           #{\p}
                            #{})})))
 
 (defn maybe-delete-room! [room-name]
@@ -196,11 +196,22 @@
 (defn topic-for-room [room-name]
   (:topic (room-for-name room-name)))
 
+(defn format-mode [enable? mode]
+  (str (if enable?
+         "+"
+         "-")
+       (apply str (map str mode))))
+
 (defn mode-for-room [room-name]
   (:mode (room-for-name room-name)))
 
+(defn set-mode-for-room! [room-name mode]
+  (let [room (room-for-name room-name)]
+    (db/put :room (assoc room
+                    :mode mode))))
+
 (defn room-is-private? [room-name]
-  (:private (mode-for-room room-name)))
+  ((mode-for-room room-name) \p))
 
 (defn nicks-in-room [room-name]
   (map :user-nick (db/get :user-in-room :room-name room-name)))

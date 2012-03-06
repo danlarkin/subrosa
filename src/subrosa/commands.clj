@@ -3,6 +3,7 @@
         [subrosa.hooks :only [add-hook hooked? run-hook]]
         [subrosa.utils :only [interleave-all]]
         [subrosa.config :only [config]]
+        [subrosa.server :only [supported-room-modes]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
@@ -461,4 +462,42 @@
               :code 461
               :msg  "KICK :Not enough parameters"}))))
 
-
+(defcommand mode [channel args]
+  (let [[room-name modes params] (.split args " ")
+        user (user-for-nick room-name)
+        room (room-for-name room-name)]
+    (if (or user room)
+      (if room
+        (if-not modes
+          (send-to-client channel
+                          324
+                          (format "%s %s"
+                                  room-name
+                                  (format-mode true (mode-for-room room-name))))
+          (let [first-char (.charAt modes 0)
+                enable? (not= \- first-char)
+                new-mode (set (if (#{\+ \-} first-char)
+                                (rest modes)
+                                (seq modes)))]
+            (if (every? supported-room-modes new-mode)
+              (dosync
+               (let [room-mode (mode-for-room room-name)]
+                 (if enable?
+                   (set-mode-for-room! room-name (clojure.set/union room-mode new-mode))
+                   (set-mode-for-room! room-name (clojure.set/difference room-mode new-mode)))
+                 (when-not (= room-mode (mode-for-room room-name))
+                   (send-to-room room-name (format ":%s MODE %s %s"
+                                                   (format-client channel)
+                                                   room-name
+                                                   (format-mode enable? new-mode))))))
+              (raise {:type :client-error
+                      :code 472
+                      :msg (format "%s :is unknown mode char to me for %s"
+                                   (first new-mode)
+                                   room-name)}))))
+        (raise {:type :client-error
+                :code 501
+                :msg ":Unknown MODE flag"}))
+      (raise {:type :client-error
+              :code 401
+              :msg (format "%s :No such nick/channel" room-name)}))))
