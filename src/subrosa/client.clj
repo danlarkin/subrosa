@@ -93,9 +93,10 @@
   (send-to-client channel 3
                   (format ":This server was created %s" (:started server)))
   (send-to-client channel 4
-                  (format "%s %s mMvV bcdefFhiIklmnoPqstv"
+                  (format "%s %s mMvV %s"
                           (hostname)
-                          (:version server)))
+                          (:version server)
+                          (apply str supported-room-modes)))
   (send-to-client channel 5
                   (format "NETWORK=%s :are supported on this server"
                           (config :network))))
