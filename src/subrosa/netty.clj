@@ -7,6 +7,7 @@
         [subrosa.commands :only [dispatch-message quit]]
         [subrosa.plugins :only [load-plugins]]
         [clojure.stacktrace :only [root-cause]])
+  (:require [clojure.tools.logging :as log])
   (:import [java.net InetSocketAddress]
            [java.util.concurrent Executors]
            [org.jboss.netty.bootstrap ServerBootstrap]
@@ -51,14 +52,14 @@
       (let [condition (meta (root-cause evt))
             chan-future-agent
             (condp = (:type condition)
-                :client-error (send-to-client
+              :client-error (send-to-client
+                             (.getChannel evt)
+                             (:code condition)
+                             (:msg condition))
+              :protocol-error (send-to-client*
                                (.getChannel evt)
-                               (:code condition)
-                               (:msg condition))
-                :protocol-error (send-to-client*
-                                 (.getChannel evt)
-                                 (format "ERROR %s" (:msg condition)))
-                :client-disconnect nil)]
+                               (format "ERROR %s" (:msg condition)))
+              :client-disconnect nil)]
         (when (:disconnect condition)
           (await chan-future-agent)
           (when-let [chan-future @chan-future-agent]
@@ -67,8 +68,7 @@
                        #{java.io.IOException
                          java.nio.channels.ClosedChannelException
                          javax.net.ssl.SSLException}))
-        (println up-or-down "ERROR")
-        (.printStackTrace (root-cause evt)))))
+        (log/error (root-cause evt)))))
   evt)
 
 (defn connect-handler [channel-group pipeline evt]
@@ -147,11 +147,12 @@
                  (->> port
                       InetSocketAddress.
                       (.bind bootstrap)
-                      (.add channel-group)))
+                      (.add channel-group))
+                 (log/info "Starting Subrosa... done."))
      :stop-fn (fn []
-                (println "Shutting down Subrosa.")
                 (doseq [channel channel-group
                         :when (user-for-channel channel)]
                   (send-to-client* channel "ERROR :Server going down"))
                 (-> channel-group .close .awaitUninterruptibly)
-                (.releaseExternalResources channel-factory))}))
+                (.releaseExternalResources channel-factory)
+                (log/info "Stopping Subrosa... done."))}))

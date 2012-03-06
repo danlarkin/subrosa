@@ -1,11 +1,10 @@
 (ns subrosa.main
   (:gen-class)
-  (use [subrosa.config :only [config]]
-       [subrosa.netty :only [create-server]]))
+  (:use [subrosa.config :only [config]]
+        [subrosa.netty :only [create-server]])
+  (:require [clojure.tools.logging :as log]))
 
 (defn -main []
   (let [{:keys [start-fn stop-fn]} (create-server (config :port))]
-    (print "Starting Subrosa... ")
     (start-fn)
-    (.addShutdownHook (Runtime/getRuntime) (Thread. stop-fn))
-    (println "done.")))
+    (.addShutdownHook (Runtime/getRuntime) (Thread. stop-fn))))

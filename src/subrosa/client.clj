@@ -189,7 +189,6 @@
 (defn remove-channel! [channel]
   (let [user (user-for-channel channel)
         nick (:nick user)]
-    #_(println "gonna remove user:" user)
     (db/delete :user (:id user))
     (doseq [room-name (rooms-for-nick nick)]
       (remove-nick-from-room! nick room-name))))

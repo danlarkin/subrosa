@@ -6,6 +6,7 @@
         [subrosa.server :only [supported-room-modes]]
         [clojure.string :only [join]]
         [clojure.contrib.condition :only [raise]])
+  (:require [clojure.tools.logging :as log])
   (:import [org.jboss.netty.channel ChannelFutureListener]))
 
 (defn dispatch-message [message channel]
@@ -14,7 +15,7 @@
       (run-hook cmd channel (or args ""))
       (do
         (when-not (empty? message)
-          (println "Received unhandled command:" message)
+          (log/debug "Received unhandled command:" message)
           (when (authenticated? channel)
             (raise {:type :client-error
                     :code 421

@@ -3,6 +3,7 @@
         [clojure.string :only [join]]
         [subrosa.netty :only [create-server]]
         [subrosa.config :only [config]])
+  (:require [clojure.tools.logging :as log])
   (:import [java.io BufferedReader InputStreamReader]
            [javax.net.ssl X509TrustManager SSLContext]
            [javax.net SocketFactory]))
@@ -14,10 +15,10 @@
 (defn run-test-server [f]
   (let [server (create-server *port*)]
     (try
-      (with-out-str ((:start-fn server)))
-      (f)
-      (finally
-       (with-out-str ((:stop-fn server)))))))
+      (binding [log/log* (fn [& _])]
+        ((:start-fn server))
+        (f)
+        ((:stop-fn server))))))
 
 (defn socket-read-line [in]
   (try
@@ -54,7 +55,7 @@
      (try
        ~@body
        (finally
-        (.close (:socket ~s))))))
+         (.close (:socket ~s))))))
 
 (defn transmit [socket command]
   (let [out (:out socket)]
