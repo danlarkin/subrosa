@@ -211,7 +211,7 @@
                     :mode mode))))
 
 (defn room-is-private? [room-name]
-  ((mode-for-room room-name) \p))
+  ((or (mode-for-room room-name) #{}) \p))
 
 (defn nicks-in-room [room-name]
   (map :user-nick (db/get :user-in-room :room-name room-name)))
