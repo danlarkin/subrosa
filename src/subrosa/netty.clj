@@ -68,7 +68,7 @@
                        #{java.io.IOException
                          java.nio.channels.ClosedChannelException
                          javax.net.ssl.SSLException}))
-        (log/error (root-cause evt)))))
+        (log/error (root-cause evt) "Unhandled Exception"))))
   evt)
 
 (defn connect-handler [channel-group pipeline evt]
