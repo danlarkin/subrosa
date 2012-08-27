@@ -3,7 +3,7 @@
         [subrosa.config :only [config]]
         [subrosa.client]
         [subrosa.hooks :only [add-hook]]
-        [clojure.contrib.condition :only [raise]])
+        [slingshot.slingshot :only [throw+]])
   (:import (java.util Date)
            (java.text SimpleDateFormat)))
 
@@ -61,6 +61,6 @@
                                        sender type room msg)))
             (send-to-client*
              channel (format ":*** PRIVMSG %s :%s" room "Catchup Complete")))
-          (raise {:type :client-error
+          (throw+ {:type :client-error
                   :code 442
                   :msg (format "%s :You're not on that channel" room)}))))))

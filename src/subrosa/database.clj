@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [get])
   (:import [java.util UUID]))
 
-(defonce db (ref {}))
+(defonce ^:dynamic db (ref {}))
 
 (defn ensure-id [m]
   (if (:id m)

@@ -6,7 +6,8 @@
         [subrosa.ssl :only [make-ssl-engine]]
         [subrosa.commands :only [dispatch-message quit]]
         [subrosa.plugins :only [load-plugins]]
-        [clojure.stacktrace :only [root-cause]])
+        [clojure.stacktrace :only [root-cause]]
+        [slingshot.ex-info])
   (:require [clojure.tools.logging :as log])
   (:import [java.net InetSocketAddress]
            [java.util.concurrent Executors]
@@ -20,7 +21,8 @@
            [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
            [org.jboss.netty.handler.codec.frame Delimiters
             DelimiterBasedFrameDecoder]
-           [org.jboss.netty.handler.codec.string StringDecoder StringEncoder]))
+           [org.jboss.netty.handler.codec.string StringDecoder StringEncoder]
+           [slingshot ExceptionInfo]))
 
 ;; Some code and a lot of inspiration for the layout of this namespace came from
 ;; Zach Tellman's awesome aleph project: http://github.com/ztellman/aleph
@@ -48,8 +50,8 @@
 
 (defn netty-error-handler [up-or-down evt]
   (when (instance? ExceptionEvent evt)
-    (if (instance? clojure.contrib.condition.Condition (root-cause evt))
-      (let [condition (meta (root-cause evt))
+    (if (instance? ExceptionInfo (root-cause evt))
+      (let [condition (:object (ex-data (root-cause evt)))
             chan-future-agent
             (condp = (:type condition)
               :client-error (send-to-client

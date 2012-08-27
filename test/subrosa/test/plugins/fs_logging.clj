@@ -1,6 +1,5 @@
 (ns subrosa.test.plugins.fs-logging
   (:use [clojure.test]
-        [clojure.contrib.io :only [delete-file-recursively]]
         [subrosa.hooks :only [hooks]]
         [subrosa.plugins.fs-logging :only [get-log-name format-date
                                            format-time add-hooks]]
