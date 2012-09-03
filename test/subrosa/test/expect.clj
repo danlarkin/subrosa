@@ -9,7 +9,8 @@
   (:import [java.io BufferedReader InputStreamReader]
            [java.net SocketTimeoutException]
            [javax.net.ssl X509TrustManager SSLContext]
-           [javax.net SocketFactory]))
+           [javax.net SocketFactory]
+           [org.apache.log4j LogManager Level]))
 
 (def ^:dynamic *timeout* 10000)
 (def ^:dynamic *host* "localhost")
@@ -18,10 +19,10 @@
 (defn run-test-server [f]
   (let [server (create-server *port*)]
     (try+
-      ;(binding [log/log* (fn [& _])]
+      (.setLevel (LogManager/getRootLogger) (Level/FATAL))
         ((:start-fn server))
         (f)
-        ((:stop-fn server)))));)
+        ((:stop-fn server)))))
 
 (defn socket-read-line [in]
   (try+
@@ -29,12 +30,8 @@
       (if (nil? read)
         :timeout
         read))
-    (catch java.lang.RuntimeException e
-      (if (instance? SocketTimeoutException (.getCause e))
-        (do
-          (log/error "Caught SocketTimeoutException")
-          :timeout)
-        (throw+ e)))))
+    (catch SocketTimeoutException e
+        :timeout)))
 
 (defn create-socketfactory []
   (if (config :ssl :keystore)

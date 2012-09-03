@@ -6,10 +6,10 @@
         [subrosa.ssl :only [make-ssl-engine]]
         [subrosa.commands :only [dispatch-message quit]]
         [subrosa.plugins :only [load-plugins]]
-        [clojure.stacktrace :only [root-cause]]
-        [slingshot.ex-info])
+        [clojure.stacktrace :only [root-cause]])
   (:require [clojure.tools.logging :as log])
-  (:import [java.net InetSocketAddress]
+  (:import clojure.lang.ExceptionInfo
+           [java.net InetSocketAddress]
            [java.util.concurrent Executors]
            [org.jboss.netty.bootstrap ServerBootstrap]
            [org.jboss.netty.channel ChannelUpstreamHandler
@@ -21,8 +21,7 @@
            [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
            [org.jboss.netty.handler.codec.frame Delimiters
             DelimiterBasedFrameDecoder]
-           [org.jboss.netty.handler.codec.string StringDecoder StringEncoder]
-           [slingshot ExceptionInfo]))
+           [org.jboss.netty.handler.codec.string StringDecoder StringEncoder]))
 
 ;; Some code and a lot of inspiration for the layout of this namespace came from
 ;; Zach Tellman's awesome aleph project: http://github.com/ztellman/aleph
