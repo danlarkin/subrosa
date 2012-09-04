@@ -10,7 +10,4 @@
                  [log4j "1.2.16"]
                  [org.jboss.netty/netty "3.2.1.Final"]
                  [swank-clojure "1.3.2"]]
-  :dev-dependencies [[lein-tar "1.0.5"]
-                     [vimclojure/server "2.3.5"]
-                     [lein-eclipse "1.0.0"]
-                     [org.clojars.scott/lein-nailgun "1.1.0"]])
+  :dev-dependencies [[lein-tar "1.0.5"]])
