@@ -10,4 +10,5 @@
                  [log4j "1.2.16"]
                  [org.jboss.netty/netty "3.2.1.Final"]
                  [swank-clojure "1.3.2"]]
-  :dev-dependencies [[lein-tar "1.0.5"]])
+  :dev-dependencies [[lein-tar "1.0.5"]
+                     [commons-io/commons-io "2.2"]])

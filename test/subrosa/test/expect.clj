@@ -104,13 +104,3 @@
            (report {:type :fail :message ~msg
                     :expected (str "(not-found? " ~string ")")
                     :actual (str "found " ~string)}))))))
-
-(defn delete-file-recursively
-  "Delete file f. If it's a directory, recursively delete all its
-  contents. Raise an excepion if any deletion fails."
-  [f & [silently]]
-  (let [f (file f)]
-    (if (.isDirectory f)
-      (doseq [child (.listFiles f)]
-        (delete-file-recursively child silently)))
-    (delete-file f silently)))
