@@ -18,11 +18,10 @@
 
 (defn run-test-server [f]
   (let [server (create-server *port*)]
-    (try+
       (.setLevel (LogManager/getRootLogger) (Level/FATAL))
         ((:start-fn server))
         (f)
-        ((:stop-fn server)))))
+        ((:stop-fn server))))
 
 (defn socket-read-line [in]
   (try+
