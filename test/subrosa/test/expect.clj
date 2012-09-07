@@ -2,32 +2,35 @@
   (:use [clojure.test]
         [clojure.string :only [join]]
         [subrosa.netty :only [create-server]]
-        [subrosa.config :only [config]])
+        [subrosa.config :only [config]]
+        [slingshot.slingshot :only [try+ throw+]]
+        [clojure.java.io :only [delete-file file]])
   (:require [clojure.tools.logging :as log])
   (:import [java.io BufferedReader InputStreamReader]
+           [java.net SocketTimeoutException]
            [javax.net.ssl X509TrustManager SSLContext]
-           [javax.net SocketFactory]))
+           [javax.net SocketFactory]
+           [org.apache.log4j LogManager Level]))
 
-(def *timeout* 10000)
-(def *host* "localhost")
-(def *port* 6789)
+(def ^:dynamic *timeout* 10000)
+(def ^:dynamic *host* "localhost")
+(def ^:dynamic *port* 6789)
 
 (defn run-test-server [f]
   (let [server (create-server *port*)]
-    (try
-      (binding [log/log* (fn [& _])]
+      (.setLevel (LogManager/getRootLogger) (Level/FATAL))
         ((:start-fn server))
         (f)
-        ((:stop-fn server))))))
+        ((:stop-fn server))))
 
 (defn socket-read-line [in]
-  (try
+  (try+
     (let [read (.readLine in)]
       (if (nil? read)
         :timeout
         read))
-    (catch java.net.SocketTimeoutException e
-      :timeout)))
+    (catch SocketTimeoutException e
+        :timeout)))
 
 (defn create-socketfactory []
   (if (config :ssl :keystore)
@@ -52,7 +55,7 @@
 
 (defmacro with-connection [s & body]
   `(let [~s (connect)]
-     (try
+     (try+
        ~@body
        (finally
          (.close (:socket ~s))))))

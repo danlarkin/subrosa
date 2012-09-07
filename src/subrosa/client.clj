@@ -1,6 +1,7 @@
 (ns subrosa.client
   (:require [subrosa.database :as db])
-  (:use [clojure.contrib.condition :only [raise]]
+  (:use [clojure.set :only [difference]]
+        [slingshot.slingshot :only [throw+]]
         [subrosa.server]
         [subrosa.config :only [config]]))
 
@@ -129,7 +130,7 @@
           (send-welcome channel)
           (send-motd channel)
           (send-lusers channel))
-        (raise {:type :protocol-error
+        (throw+ {:type :protocol-error
                 :disconnect true
                 :msg ":Bad Password"})))))
 
@@ -230,7 +231,7 @@
     (send-to-client* chan msg)))
 
 (defn send-to-clients-in-rooms-for-nick [nick msg channel]
-  (doseq [chan (clojure.set/difference
+  (doseq [chan (difference
                 (into #{} (for [room-name (rooms-for-nick nick)
                                 chan (channels-in-room room-name)]
                             chan))

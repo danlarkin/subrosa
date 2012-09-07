@@ -8,7 +8,8 @@
         [subrosa.plugins :only [load-plugins]]
         [clojure.stacktrace :only [root-cause]])
   (:require [clojure.tools.logging :as log])
-  (:import [java.net InetSocketAddress]
+  (:import clojure.lang.ExceptionInfo
+           [java.net InetSocketAddress]
            [java.util.concurrent Executors]
            [org.jboss.netty.bootstrap ServerBootstrap]
            [org.jboss.netty.channel ChannelUpstreamHandler
@@ -48,8 +49,8 @@
 
 (defn netty-error-handler [up-or-down evt]
   (when (instance? ExceptionEvent evt)
-    (if (instance? clojure.contrib.condition.Condition (root-cause evt))
-      (let [condition (meta (root-cause evt))
+    (if (instance? ExceptionInfo (root-cause evt))
+      (let [condition (:object (ex-data (root-cause evt)))
             chan-future-agent
             (condp = (:type condition)
               :client-error (send-to-client
