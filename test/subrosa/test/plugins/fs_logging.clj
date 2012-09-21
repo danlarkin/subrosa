@@ -1,23 +1,25 @@
 (ns subrosa.test.plugins.fs-logging
   (:use [clojure.test]
-        [clojure.contrib.io :only [delete-file-recursively]]
         [subrosa.hooks :only [hooks]]
         [subrosa.plugins.fs-logging :only [get-log-name format-date
                                            format-time add-hooks]]
         [subrosa.config :only [config]]
         [subrosa.utils :only [with-var-root]]
-        [subrosa.test.expect]))
+        [subrosa.test.expect])
+  (:import [org.apache.commons.io FileUtils]))
 
 (use-fixtures :once (fn [f]
                       (with-var-root [hooks (ref @hooks)
                                       format-date (constantly "2010-11-23")
                                       format-time (constantly "19:16:45")]
                         (add-hooks)
-                        (delete-file-recursively
-                         (config :plugins :fs-logging :directory) :silently)
+                        (FileUtils/deleteQuietly
+                          (java.io.File.
+                            (config :plugins :fs-logging :directory)))
                         (f)
-                        (delete-file-recursively
-                         (config :plugins :fs-logging :directory)))))
+                        (FileUtils/deleteQuietly
+                          (java.io.File.
+                            (config :plugins :fs-logging :directory))))))
 
 (use-fixtures :each run-test-server)
 

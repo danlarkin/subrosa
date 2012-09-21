@@ -16,7 +16,7 @@
   (if (not (seq bindings))
     `(do ~@body)
     (let [old-value-sym (gensym)]
-      `(let [~old-value-sym (.getRoot #'~(first bindings))]
+      `(let [~old-value-sym (.getRawRoot #'~(first bindings))]
          (alter-var-root #'~(first bindings) (fn [& _#]  ~(second bindings)))
          (try (with-var-root ~(nnext bindings) ~@body)
               (finally

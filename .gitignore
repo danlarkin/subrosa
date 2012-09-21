@@ -5,3 +5,6 @@ classes
 *~
 log
 .lein-failures
+.classpath
+.project
+.lein-deps-sum
