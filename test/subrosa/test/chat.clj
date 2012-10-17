@@ -18,6 +18,20 @@
       (Thread/sleep 1000)) ; give some time for the message to get to the server
     (is (received? s1 #"dan2!dan@.* PRIVMSG #foo :Hello, World!"))))
 
+(deftest basic-privmsg-to-room-missing-colon
+  (with-connection s1
+    (transmit s1 "NICK dan")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (is (received? s1 #"JOIN #foo"))
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "PRIVMSG #foo hello")
+      (Thread/sleep 1000)) ; give some time for the message to get to the server
+    (is (received? s1 #"dan2!dan@.* PRIVMSG #foo :hello"))))
+
 (deftest basic-privmsg-to-user
   (with-connection s1
     (transmit s1 "NICK dan")
@@ -52,6 +66,21 @@
       (transmit s2 "NOTICE #foo :Hello, World!")
       (Thread/sleep 1000)) ; give some time for the message to get to the server
     (is (received? s1 #"dan2!dan@.* NOTICE #foo :Hello, World!"))))
+
+(deftest notice-to-room-missing-colon
+  (with-connection s1
+    (transmit s1 "NICK dan")
+    (transmit s1 "USER dan 0 * :Dan Larkin")
+    (transmit s1 "JOIN #foo")
+    (is (received? s1 #"JOIN #foo"))
+    (with-connection s2
+      (transmit s2 "NICK dan2")
+      (transmit s2 "USER dan 0 * :Dan Larkin")
+      (transmit s2 "JOIN #foo")
+      (transmit s2 "NOTICE #foo hello")
+      (Thread/sleep 1000)) ; give some time for the message to get to the server
+    (is (received? s1 #"dan2!dan@.* NOTICE #foo :hello"))))
+
 
 (deftest notice-to-user
   (with-connection s1
