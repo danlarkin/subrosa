@@ -1,5 +1,8 @@
 0.9 ??
 
+0.8.2 2012-10-17
+* Fix NOTICE and PRIVMSG to add missing colons
+
 0.8.1 2012-03-14
 * Fix PART command
 * Fix exception logging
