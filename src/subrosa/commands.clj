@@ -207,13 +207,26 @@
                                         (join " " names))))
   (send-to-client channel 366 (format "%s :End of NAMES list" room-name)))
 
+(defn make-plain-msg [msg]
+  (if (= (.charAt msg 0) \:)
+    (subs msg 1)
+    msg))
+
+(defn make-adorned-msg [msg]
+  (if (and msg
+           (= (.charAt msg 0) \:))
+    msg
+    (str ":" msg)))
+
 (defcommand privmsg [channel args]
   (let [[recipient received-msg] (.split args " " 2)
         msg (format ":%s PRIVMSG %s %s"
-                    (format-client channel) recipient received-msg)]
+                    (format-client channel)
+                    recipient
+                    (make-adorned-msg received-msg))]
     (if (not (empty? recipient))
       (if (not (nil? received-msg))
-        (let [plain-msg (subs received-msg 1)]
+        (let [plain-msg (make-plain-msg received-msg)]
           (if (room-for-name recipient)
             (do
               (send-to-room-except recipient msg channel)
@@ -237,10 +250,12 @@
 (defcommand notice [channel args]
   (let [[recipient received-msg] (.split args " " 2)
         msg (format ":%s NOTICE %s %s"
-                    (format-client channel) recipient received-msg)]
+                    (format-client channel)
+                    recipient
+                    (make-adorned-msg received-msg))]
     (when (and (not (empty? recipient))
                (not (nil? received-msg)))
-      (let [plain-msg (subs received-msg 1)]
+      (let [plain-msg (make-plain-msg received-msg)]
         (if (room-for-name recipient)
           (do
             (send-to-room-except recipient msg channel)
