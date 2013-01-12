@@ -1,9 +1,9 @@
 (ns subrosa.client
-  (:require [subrosa.database :as db])
-  (:use [clojure.set :only [difference]]
-        [slingshot.slingshot :only [throw+]]
-        [subrosa.server]
-        [subrosa.config :only [config]]))
+  (:require [carica.core :refer [config]]
+            [clojure.set :refer [difference]]
+            [slingshot.slingshot :refer [throw+]]
+            [subrosa.database :as db]
+            [subrosa.server :refer :all]))
 
 (defn user-for-channel [channel]
   (db/get :user :channel channel))
@@ -131,8 +131,8 @@
           (send-motd channel)
           (send-lusers channel))
         (throw+ {:type :protocol-error
-                :disconnect true
-                :msg ":Bad Password"})))))
+                 :disconnect true
+                 :msg ":Bad Password"})))))
 
 (defn update-user-for-nick! [nick [user-name mode _ real-name]]
   (let [user (user-for-nick nick)]

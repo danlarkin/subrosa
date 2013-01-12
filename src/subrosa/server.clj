@@ -1,8 +1,8 @@
 (ns subrosa.server
-  (:require [subrosa.database :as db])
-  (:use [subrosa.config :only [config]])
-  (:import [java.util Date]
-           [java.net InetAddress]))
+  (:require [carica.core :refer [config]]
+            [subrosa.database :as db])
+  (:import (java.net InetAddress)
+           (java.util Date)))
 
 ;; database schema:
 ;; :user => [:nick :real-name :user-name :quit-message :channel :pending?]

@@ -1,11 +1,11 @@
 (ns subrosa.test.ssl
-  (:use [clojure.test]
-        [subrosa.test.expect]
-        [subrosa.config :only [config config-override]]
-        [subrosa.utils :only [with-var-root]]))
+  (:require [carica.core :refer [config override-config]]
+            [clojure.test :refer :all]
+            [subrosa.test.expect :refer :all]
+            [subrosa.utils :refer [with-var-root]]))
 
 (use-fixtures :once (fn [f]
-                      (with-var-root [config (config-override
+                      (with-var-root [config (override-config
                                               {:ssl {:keystore "test.ks"
                                                      :password "foobar"}})]
                         (f))))

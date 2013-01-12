@@ -1,27 +1,30 @@
 (ns subrosa.netty
-  (:use [subrosa.server :only [reset-all-state!]]
-        [subrosa.client :only [add-channel! remove-channel! send-to-client
-                               send-to-client* user-for-channel]]
-        [subrosa.config :only [config]]
-        [subrosa.ssl :only [make-ssl-engine]]
-        [subrosa.commands :only [dispatch-message quit]]
-        [subrosa.plugins :only [load-plugins]]
-        [clojure.stacktrace :only [root-cause]])
-  (:require [clojure.tools.logging :as log])
-  (:import clojure.lang.ExceptionInfo
-           [java.net InetSocketAddress]
-           [java.util.concurrent Executors]
-           [org.jboss.netty.bootstrap ServerBootstrap]
-           [org.jboss.netty.channel ChannelUpstreamHandler
-            ChannelDownstreamHandler ChannelEvent ChannelState ChannelStateEvent
-            ExceptionEvent MessageEvent ChannelFutureListener Channels
-            ChannelPipelineFactory]
-           [org.jboss.netty.handler.ssl SslHandler]
-           [org.jboss.netty.channel.group DefaultChannelGroup]
-           [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
-           [org.jboss.netty.handler.codec.frame Delimiters
-            DelimiterBasedFrameDecoder]
-           [org.jboss.netty.handler.codec.string StringDecoder StringEncoder]))
+  (:require [carica.core :refer [config]]
+            [clojure.stacktrace :refer [root-cause]]
+            [clojure.tools.logging :as log]
+            [subrosa.client :refer [add-channel! remove-channel! send-to-client
+                                    send-to-client* user-for-channel]]
+            [subrosa.commands :refer [dispatch-message quit]]
+
+            [subrosa.server :refer [reset-all-state!]]
+            [subrosa.plugins :refer [load-plugins]]
+            [subrosa.ssl :refer [make-ssl-engine]])
+  (:import (clojure.lang ExceptionInfo)
+           (java.net InetSocketAddress)
+           (java.util.concurrent Executors)
+           (org.jboss.netty.bootstrap ServerBootstrap)
+           (org.jboss.netty.channel ChannelUpstreamHandler
+                                    ChannelDownstreamHandler ChannelEvent
+                                    ChannelState ChannelStateEvent
+                                    ExceptionEvent MessageEvent
+                                    ChannelFutureListener Channels
+                                    ChannelPipelineFactory)
+           (org.jboss.netty.handler.ssl SslHandler)
+           (org.jboss.netty.channel.group DefaultChannelGroup)
+           (org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory)
+           (org.jboss.netty.handler.codec.frame Delimiters
+                                                DelimiterBasedFrameDecoder)
+           (org.jboss.netty.handler.codec.string StringDecoder StringEncoder)))
 
 ;; Some code and a lot of inspiration for the layout of this namespace came from
 ;; Zach Tellman's awesome aleph project: http://github.com/ztellman/aleph

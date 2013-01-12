@@ -1,6 +1,6 @@
 (ns subrosa.test.database
-  (:require [subrosa.database :as db])
-  (:use [clojure.test]))
+  (:require [clojure.test :refer :all]
+            [subrosa.database :as db]))
 
 (use-fixtures :each
               (fn [f]

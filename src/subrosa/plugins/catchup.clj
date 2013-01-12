@@ -1,11 +1,11 @@
 (ns subrosa.plugins.catchup
-  (:use [subrosa.commands :only [defcommand]]
-        [subrosa.config :only [config]]
-        [subrosa.client]
-        [subrosa.hooks :only [add-hook]]
-        [slingshot.slingshot :only [throw+]])
-  (:import (java.util Date)
-           (java.text SimpleDateFormat)))
+  (:require [carica.core :refer [config]]
+            [slingshot.slingshot :refer [throw+]]
+            [subrosa.client :refer :all]
+            [subrosa.commands :refer [defcommand]]
+            [subrosa.hooks :refer [add-hook]])
+  (:import (java.text SimpleDateFormat)
+           (java.util Date)))
 
 (defn format-time []
   (.format (SimpleDateFormat. "EEE - HH:mm:ss") (Date.)))
@@ -62,5 +62,5 @@
             (send-to-client*
              channel (format ":*** PRIVMSG %s :%s" room "Catchup Complete")))
           (throw+ {:type :client-error
-                  :code 442
-                  :msg (format "%s :You're not on that channel" room)}))))))
+                   :code 442
+                   :msg (format "%s :You're not on that channel" room)}))))))

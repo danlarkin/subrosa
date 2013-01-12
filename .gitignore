@@ -1,10 +1,9 @@
 pom.xml
 *.jar
-lib
-classes
 *~
 log
 .lein-failures
 .classpath
 .project
 .lein-deps-sum
+/target

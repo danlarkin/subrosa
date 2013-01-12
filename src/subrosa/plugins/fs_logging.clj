@@ -1,10 +1,10 @@
 (ns subrosa.plugins.fs-logging
-  (:use [subrosa.hooks :only [add-hook]]
-        [subrosa.client :exclude [io-agent]]
-        [subrosa.config :only [config]])
-  (:import [java.util Date]
-           [java.text SimpleDateFormat]
-           [java.io File FileWriter]))
+  (:require [carica.core :refer [config]]
+            [subrosa.client :refer :all :exclude [io-agent]]
+            [subrosa.hooks :refer [add-hook]])
+  (:import (java.io File FileWriter)
+           (java.text SimpleDateFormat)
+           (java.util Date)))
 
 (def io-agent (agent nil))
 

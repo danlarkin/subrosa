@@ -1,13 +1,13 @@
 (ns subrosa.commands
-  (:use [subrosa.client]
-        [subrosa.hooks :only [add-hook hooked? run-hook]]
-        [subrosa.utils :only [interleave-all]]
-        [subrosa.config :only [config]]
-        [subrosa.server :only [supported-room-modes]]
-        [clojure.string :only [join]]
-        [slingshot.slingshot :only [throw+]])
-  (:require [clojure.tools.logging :as log])
-  (:import [org.jboss.netty.channel ChannelFutureListener]))
+  (:require [carica.core :refer [config]]
+            [clojure.string :refer [join]]
+            [clojure.tools.logging :as log]
+            [slingshot.slingshot :refer [throw+]]
+            [subrosa.client :refer :all]
+            [subrosa.hooks :refer [add-hook hooked? run-hook]]
+            [subrosa.server :refer [supported-room-modes]]
+            [subrosa.utils :refer [interleave-all]])
+  (:import (org.jboss.netty.channel ChannelFutureListener)))
 
 (defn dispatch-message [message channel]
   (let [[cmd args] (seq (.split message " " 2))]
@@ -18,8 +18,8 @@
           (log/debug "Received unhandled command:" message)
           (when (authenticated? channel)
             (throw+ {:type :client-error
-                    :code 421
-                    :msg (format "%s :Unknown command" cmd)})))))))
+                     :code 421
+                     :msg (format "%s :Unknown command" cmd)})))))))
 
 (defn fix-args
   [require-auth? fn-tail]
@@ -66,14 +66,14 @@
          (maybe-add-authentication-step! channel "NICK")
          (maybe-update-authentication! channel))
         (throw+ {:type :client-error
-                :code 433
-                :msg (format "%s :Nickname is already in use" nick)}))
+                 :code 433
+                 :msg (format "%s :Nickname is already in use" nick)}))
       (throw+ {:type :client-error
-              :code 432
-              :msg (format "%s :Erroneous nickname" nick)}))
+               :code 432
+               :msg (format "%s :Erroneous nickname" nick)}))
     (throw+ {:type :client-error
-            :code 431
-            :msg ":No nickname given"})))
+             :code 431
+             :msg ":No nickname given"})))
 
 (defcommand* user [channel parts]
   (if (not (authenticated? channel))
@@ -84,11 +84,11 @@
          (maybe-add-authentication-step! channel "USER")
          (maybe-update-authentication! channel))
         (throw+ {:type :client-error
-                :code 461
-                :msg  "USER :Not enough parameters"})))
+                 :code 461
+                 :msg  "USER :Not enough parameters"})))
     (throw+ {:type :client-error
-            :code 462
-            :msg ":Unauthorized command (already registered)"})))
+             :code 462
+             :msg ":Unauthorized command (already registered)"})))
 
 (defcommand* pass [channel password]
   (if (and (not (authenticated? channel))
@@ -99,16 +99,16 @@
          (maybe-add-authentication-step! channel "PASS")
          (maybe-update-authentication! channel))
         (throw+ {:type :protocol-error
-                :disconnect true
-                :msg ":Bad Password"}))
+                 :disconnect true
+                 :msg ":Bad Password"}))
       (throw+ {:type :client-error
-              :code 461
-              :disconnect true
-              :msg  "PASS :Not enough parameters"}))
+               :code 461
+               :disconnect true
+               :msg  "PASS :Not enough parameters"}))
     (throw+ {:type :client-error
-            :code 462
-            :disconnect true
-            :msg ":Unauthorized command (already registered)"})))
+             :code 462
+             :disconnect true
+             :msg ":Unauthorized command (already registered)"})))
 
 (defn quit [channel]
   (let [nick (nick-for-channel channel)
@@ -151,14 +151,14 @@
                  (dispatch-message (format "NAMES %s" room-name) channel)
                  (run-hook 'join-hook channel room-name))
                (throw+ {:type :client-error
-                       :code 403
-                       :msg (format "%s :No such channel" room-name)})))))
+                        :code 403
+                        :msg (format "%s :No such channel" room-name)})))))
         (throw+ {:type :client-error
-                :code 461
-                :msg "JOIN :Not enough parameters"}))
+                 :code 461
+                 :msg "JOIN :Not enough parameters"}))
       (throw+ {:type :client-error
-              :code 461
-              :msg "JOIN :Too many parameters"}))))
+               :code 461
+               :msg "JOIN :Too many parameters"}))))
 
 (defn valid-topic? [topic]
   (.startsWith topic ":"))
@@ -180,23 +180,23 @@
                                                  new-topic)))
                 (run-hook 'topic-hook channel room-name old-topic new-topic))
               (throw+ {:type :client-error
-                      :code 442
-                      :msg (format "%s :You're not on that channel"
-                                   room-name)}))
+                       :code 442
+                       :msg (format "%s :You're not on that channel"
+                                    room-name)}))
             (throw+ {:type :client-error
-                    :code 461
-                    :msg (format "TOPIC :Not enough parameters")}))
+                     :code 461
+                     :msg (format "TOPIC :Not enough parameters")}))
           (if-let [topic (topic-for-room room-name)]
             (send-to-client channel 332
                             (format "%s :%s" room-name topic))
             (send-to-client channel 331
                             (format "%s :No topic is set" room-name))))
         (throw+ {:type :client-error
-                :code 403
-                :msg (format "%s :No such channel" room-name)})))
+                 :code 403
+                 :msg (format "%s :No such channel" room-name)})))
     (throw+ {:type :client-error
-            :code 461
-            :msg "TOPIC :Not enough parameters"})))
+             :code 461
+             :msg "TOPIC :Not enough parameters"})))
 
 (defcommand names [channel room-name]
   (when-let [names (if (empty? room-name)
@@ -238,14 +238,14 @@
                 (run-hook 'privmsg-nick-hook
                           channel recipient plain-msg))
               (throw+ {:type :client-error
-                      :code 401
-                      :msg (format "%s :No such nick/channel" recipient)}))))
+                       :code 401
+                       :msg (format "%s :No such nick/channel" recipient)}))))
         (throw+ {:type :client-error
-                :code 412
-                :msg ":No text to send"}))
+                 :code 412
+                 :msg ":No text to send"}))
       (throw+ {:type :client-error
-              :code 411
-              :msg ":No recipient given (PRIVMSG)"}))))
+               :code 411
+               :msg ":No recipient given (PRIVMSG)"}))))
 
 (defcommand notice [channel args]
   (let [[recipient received-msg] (.split args " " 2)
@@ -268,14 +268,14 @@
   (if (not (empty? server))
     (send-to-client* channel (format "PONG %s :%s" (hostname) server))
     (throw+ {:type :client-error
-            :code 409
-            :msg ":No origin specified"})))
+             :code 409
+             :msg ":No origin specified"})))
 
 (defcommand pong [channel server]
   (when (empty? server)
     (throw+ {:type :client-error
-            :code 409
-            :msg ":No origin specified"})))
+             :code 409
+             :msg ":No origin specified"})))
 
 (defcommand whois [channel username]
   (if-not (empty? username)
@@ -294,11 +294,11 @@
                                             (apply str (interpose " " rooms))))
         (send-to-client channel 318 ":End of WHOIS list"))
       (throw+ {:type :client-error
-              :code 401
-              :msg (format "%s :No such nick/channel" username)}))
+               :code 401
+               :msg (format "%s :No such nick/channel" username)}))
     (throw+ {:type :client-error
-            :code 431
-            :msg ":No nickname given"})))
+             :code 431
+             :msg ":No nickname given"})))
 
 (defcommand list [channel rooms]
   (when-not (= rooms "STOP")
@@ -342,14 +342,14 @@
              (remove-nick-from-room! nick room)
              (run-hook 'part-hook channel room part-message))
             (throw+ {:type :client-error
-                    :code 442
-                    :msg (format "%s :You're not on that channel" room)}))
+                     :code 442
+                     :msg (format "%s :You're not on that channel" room)}))
           (throw+ {:type :client-error
-                  :code 403
-                  :msg (format "%s :No such channel" room)}))
+                   :code 403
+                   :msg (format "%s :No such channel" room)}))
         (throw+ {:type :client-error
-                :code 461
-                :msg "PART :Not enough parameters"})))))
+                 :code 461
+                 :msg "PART :Not enough parameters"})))))
 
 (defcommand motd [channel args]
   (send-motd channel))
@@ -389,8 +389,8 @@
                                           (apply str
                                                  (interpose " " on-nicks)))))
     (throw+ {:type :client-error
-            :code 461
-            :msg  "ISON :Not enough parameters"})))
+             :code 461
+             :msg  "ISON :Not enough parameters"})))
 
 (defcommand invite [channel args]
   (let [sender-nick (nick-for-channel channel)
@@ -412,21 +412,21 @@
             (if (nick-in-room? sender-nick room-name)
               (do-invite)
               (throw+ {:type :client-error
-                      :code 442
-                      :msg (format "%s :You're not on that channel"
-                                   room-name)}))
+                       :code 442
+                       :msg (format "%s :You're not on that channel"
+                                    room-name)}))
             (do-invite))
           (throw+ {:type :client-error
-                  :code 443
-                  :msg (format "%s %s :is already on channel"
-                               target-nick
-                               room-name)}))
+                   :code 443
+                   :msg (format "%s %s :is already on channel"
+                                target-nick
+                                room-name)}))
         (throw+ {:type :client-error
-                :code 401
-                :msg (format "%s :No such nick/channel" target-nick)}))
+                 :code 401
+                 :msg (format "%s :No such nick/channel" target-nick)}))
       (throw+ {:type :client-error
-              :code 461
-              :msg  "INVITE :Not enough parameters"}))))
+               :code 461
+               :msg  "INVITE :Not enough parameters"}))))
 
 (defcommand kick [channel args]
   (let [[rooms nicks comment] (.split args " " 3)]
@@ -448,18 +448,18 @@
                              (remove-nick-from-room! nick room)
                              (run-hook 'kick-hook channel room nick comment))
                             (throw+ {:type :client-error
-                                    :code 441
-                                    :msg (format
-                                          "%s %s :They aren't on that channel"
-                                          nick
-                                          room)}))
+                                     :code 441
+                                     :msg (format
+                                           "%s %s :They aren't on that channel"
+                                           nick
+                                           room)}))
                           (throw+ {:type :client-error
-                                  :code 442
-                                  :msg (format "%s :You're not on that channel"
-                                               room)}))
+                                   :code 442
+                                   :msg (format "%s :You're not on that channel"
+                                                room)}))
                         (throw+ {:type :client-error
-                                :code 403
-                                :msg (format "%s :No such channel" room)})))]
+                                 :code 403
+                                 :msg (format "%s :No such channel" room)})))]
         (cond
          (and (= 1 (count rooms))
               (>= 1 (count nicks)))
@@ -472,11 +472,11 @@
            (do-kick nick room))
 
          :else (throw+ {:type :client-error
-                       :code 461
-                       :msg  "KICK :Not enough parameters"})))
+                        :code 461
+                        :msg  "KICK :Not enough parameters"})))
       (throw+ {:type :client-error
-              :code 461
-              :msg  "KICK :Not enough parameters"}))))
+               :code 461
+               :msg  "KICK :Not enough parameters"}))))
 
 (defcommand mode [channel args]
   (let [[room-name modes params] (.split args " ")
@@ -507,13 +507,13 @@
                                                    room-name
                                                    (format-mode enable? new-mode))))))
               (throw+ {:type :client-error
-                      :code 472
-                      :msg (format "%s :is unknown mode char to me for %s"
-                                   (first new-mode)
-                                   room-name)}))))
+                       :code 472
+                       :msg (format "%s :is unknown mode char to me for %s"
+                                    (first new-mode)
+                                    room-name)}))))
         (throw+ {:type :client-error
-                :code 501
-                :msg ":Unknown MODE flag"}))
+                 :code 501
+                 :msg ":Unknown MODE flag"}))
       (throw+ {:type :client-error
-              :code 401
-              :msg (format "%s :No such nick/channel" room-name)}))))
+               :code 401
+               :msg (format "%s :No such nick/channel" room-name)}))))

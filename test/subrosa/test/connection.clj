@@ -1,8 +1,8 @@
 (ns subrosa.test.connection
-  (:use [clojure.test]
-        [subrosa.test.expect]
-        [subrosa.config :only [config config-override]]
-        [subrosa.utils :only [with-var-root]]))
+  (:require [carica.core :refer [config override-config]]
+            [clojure.test :refer :all]
+            [subrosa.test.expect :refer :all]
+            [subrosa.utils :refer [with-var-root]]))
 
 (use-fixtures :each run-test-server)
 
@@ -176,7 +176,7 @@
       (is (received? s2 #"401 dan2 dan :No such nick/channel")))))
 
 (deftest pass-command-success
-  (with-var-root [config (config-override {:password "foobar"})]
+  (with-var-root [config (override-config {:password "foobar"})]
     (with-connection s
       (transmit s "PASS foobar")
       (transmit s "NICK dan")
@@ -184,7 +184,7 @@
       (is (received? s #"Welcome to the .* dan$")))))
 
 (deftest pass-command-wrong-password
-  (with-var-root [config (config-override {:password "foobar"})]
+  (with-var-root [config (override-config {:password "foobar"})]
     (with-connection s
       (transmit s "PASS superdan")
       (transmit s "NICK dan")
@@ -192,7 +192,7 @@
       (is (received? s #"ERROR :Bad Password")))))
 
 (deftest pass-command-wrong-order
-  (with-var-root [config (config-override {:password "foobar"})]
+  (with-var-root [config (override-config {:password "foobar"})]
     (with-connection s
       (transmit s "NICK dan")
       (transmit s "PASS foobar")
@@ -200,14 +200,14 @@
       (is (received? s #"Unauthorized command \(already registered\)")))))
 
 (deftest pass-command-missing-pass
-  (with-var-root [config (config-override {:password "foobar"})]
+  (with-var-root [config (override-config {:password "foobar"})]
     (with-connection s
       (transmit s "NICK dan")
       (transmit s "USER dan 0 * :Dan Larkin")
       (is (received? s #"ERROR :Bad Password")))))
 
 (deftest pass-command-wrong-args
-  (with-var-root [config (config-override {:password "foobar"})]
+  (with-var-root [config (override-config {:password "foobar"})]
     (with-connection s
       (transmit s "PASS")
       (transmit s "NICK dan")
@@ -215,7 +215,7 @@
       (is (received? s #"461 \* PASS :Not enough parameters")))))
 
 (deftest pass-command-sent-when-not-required
-  (with-var-root [config (config-override {:password nil})]
+  (with-var-root [config (override-config {:password nil})]
     (with-connection s
       (transmit s "PASS foobar")
       (transmit s "NICK dan")

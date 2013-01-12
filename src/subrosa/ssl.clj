@@ -1,8 +1,8 @@
 (ns subrosa.ssl
-  (:use [subrosa.config :only [config]])
-  (:import [java.io FileInputStream]
-           [javax.net.ssl SSLContext KeyManagerFactory]
-           [java.security KeyStore]))
+  (:require [carica.core :refer [config]])
+  (:import (java.io FileInputStream)
+           (java.security KeyStore)
+           (javax.net.ssl KeyManagerFactory SSLContext)))
 
 (defn make-keystore []
   (let [ks (KeyStore/getInstance "JKS")]

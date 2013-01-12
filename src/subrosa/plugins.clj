@@ -1,5 +1,5 @@
 (ns subrosa.plugins
-  (:use [clojure.tools.namespace]))
+  (:require [clojure.tools.namespace :refer [find-namespaces-on-classpath]]))
 
 (defn find-plugins []
   (filter #(.startsWith (str %) "subrosa.plugins.")

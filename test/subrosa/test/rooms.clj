@@ -1,7 +1,7 @@
 (ns subrosa.test.rooms
-  (:use [clojure.test]
-        [clojure.string :only [join]]
-        [subrosa.test.expect]))
+  (:require [clojure.test :refer :all]
+            [clojure.string :refer [join]]
+            [subrosa.test.expect :refer :all]))
 
 (use-fixtures :each run-test-server)
 

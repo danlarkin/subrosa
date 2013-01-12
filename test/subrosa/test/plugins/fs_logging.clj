@@ -1,12 +1,12 @@
 (ns subrosa.test.plugins.fs-logging
-  (:use [clojure.test]
-        [subrosa.hooks :only [hooks]]
-        [subrosa.plugins.fs-logging :only [get-log-name format-date
-                                           format-time add-hooks]]
-        [subrosa.config :only [config]]
-        [subrosa.utils :only [with-var-root]]
-        [subrosa.test.expect])
-  (:import [org.apache.commons.io FileUtils]))
+  (:require [carica.core :refer [config]]
+            [clojure.test :refer :all]
+            [subrosa.hooks :refer [hooks]]
+            [subrosa.plugins.fs-logging :refer [get-log-name format-date
+                                                format-time add-hooks]]
+            [subrosa.test.expect :refer :all]
+            [subrosa.utils :refer [with-var-root]])
+  (:import (org.apache.commons.io FileUtils)))
 
 (use-fixtures :once (fn [f]
                       (with-var-root [hooks (ref @hooks)
@@ -14,12 +14,12 @@
                                       format-time (constantly "19:16:45")]
                         (add-hooks)
                         (FileUtils/deleteQuietly
-                          (java.io.File.
-                            (config :plugins :fs-logging :directory)))
+                         (java.io.File.
+                          (config :plugins :fs-logging :directory)))
                         (f)
                         (FileUtils/deleteQuietly
-                          (java.io.File.
-                            (config :plugins :fs-logging :directory))))))
+                         (java.io.File.
+                          (config :plugins :fs-logging :directory))))))
 
 (use-fixtures :each run-test-server)
 

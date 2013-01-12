@@ -1,6 +1,6 @@
 (ns subrosa.database
   (:refer-clojure :exclude [get])
-  (:import [java.util UUID]))
+  (:import (java.util UUID)))
 
 (defonce ^:dynamic db (ref {}))
 

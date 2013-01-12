@@ -1,8 +1,8 @@
 (ns subrosa.main
   (:gen-class)
-  (:use [subrosa.config :only [config]]
-        [subrosa.netty :only [create-server]])
-  (:require [clojure.tools.logging :as log]))
+  (:require [carica.core :refer [config]]
+            [clojure.tools.logging :as log]
+            [subrosa.netty :refer [create-server]]))
 
 (defn -main []
   (let [{:keys [start-fn stop-fn]} (create-server (config :port))]

@@ -1,6 +1,6 @@
 (ns subrosa.test.plugins.catchup
-  (:use [clojure.test]
-        [subrosa.test.expect]))
+  (:require [clojure.test :refer :all]
+            [subrosa.test.expect :refer :all]))
 
 (use-fixtures :each run-test-server)
 
