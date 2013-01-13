@@ -85,7 +85,7 @@
          (maybe-update-authentication! channel))
         (throw+ {:type :client-error
                  :code 461
-                 :msg  "USER :Not enough parameters"})))
+                 :msg "USER :Not enough parameters"})))
     (throw+ {:type :client-error
              :code 462
              :msg ":Unauthorized command (already registered)"})))
@@ -104,7 +104,7 @@
       (throw+ {:type :client-error
                :code 461
                :disconnect true
-               :msg  "PASS :Not enough parameters"}))
+               :msg "PASS :Not enough parameters"}))
     (throw+ {:type :client-error
              :code 462
              :disconnect true
@@ -390,7 +390,7 @@
                                                  (interpose " " on-nicks)))))
     (throw+ {:type :client-error
              :code 461
-             :msg  "ISON :Not enough parameters"})))
+             :msg "ISON :Not enough parameters"})))
 
 (defcommand invite [channel args]
   (let [sender-nick (nick-for-channel channel)
@@ -426,7 +426,7 @@
                  :msg (format "%s :No such nick/channel" target-nick)}))
       (throw+ {:type :client-error
                :code 461
-               :msg  "INVITE :Not enough parameters"}))))
+               :msg "INVITE :Not enough parameters"}))))
 
 (defcommand kick [channel args]
   (let [[rooms nicks comment] (.split args " " 3)]
@@ -473,10 +473,10 @@
 
          :else (throw+ {:type :client-error
                         :code 461
-                        :msg  "KICK :Not enough parameters"})))
+                        :msg "KICK :Not enough parameters"})))
       (throw+ {:type :client-error
                :code 461
-               :msg  "KICK :Not enough parameters"}))))
+               :msg "KICK :Not enough parameters"}))))
 
 (defcommand mode [channel args]
   (let [[room-name modes params] (.split args " ")
