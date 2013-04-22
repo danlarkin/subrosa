@@ -1,6 +1,6 @@
 (ns subrosa.client
   (:require [carica.core :refer [config]]
-            [clojure.java.io]
+            [clojure.java.io :refer :all]
             [clojure.set :refer [difference]]
             [slingshot.slingshot :refer [throw+]]
             [subrosa.database :as db]
