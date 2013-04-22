@@ -1,6 +1,6 @@
 (ns subrosa.test.expect
   (:require [carica.core :refer [config]]
-            [clojure.java.io :refer [delete-file file]]
+            [clojure.java.io :refer [delete-file file as-file]]
             [clojure.string :refer [join]]
             [clojure.test :refer :all]
             [clojure.tools.logging :as log]
@@ -42,6 +42,11 @@
                     (.init nil (into-array [tm]) nil))]
       (.getSocketFactory context))
     (SocketFactory/getDefault)))
+
+(defn remove-motd [f]
+  (f)
+  (if (.exists (as-file "etc/motd"))
+    (delete-file "etc/motd")))
 
 (defn connect
   ([] (connect *host* *port*))
