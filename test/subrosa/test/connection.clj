@@ -1,5 +1,6 @@
 (ns subrosa.test.connection
   (:require [carica.core :refer [config override-config]]
+            [clojure.java.io :as io]
             [clojure.test :refer :all]
             [subrosa.test.expect :refer :all]
             [subrosa.utils :refer [with-var-root]]))
@@ -257,11 +258,39 @@
     (is (received? s #"352 dan #foo danismyname .* .* dan H :0 Dan Larkin"))
     (is (received? s #"315 dan #foo :End of WHO list"))))
 
-(deftest motd-sent-at-authentication
+(deftest motd-sent-at-authentication-without-an-motd-file
   (with-connection s
     (transmit s "NICK dan")
     (transmit s "USER danismyname 0 * :Dan Larkin")
     (is (received? s #"422 dan :MOTD File is missing"))))
+
+(deftest motd-sent-at-authentication-with-an-motd-file
+  (try
+    (spit "etc/motd" "expected MOTD content")
+    (with-connection s
+      (transmit s "NICK dan")
+      (transmit s "USER dan 0 * :Dan Larkin")
+      (is (received? s #"375 dan :- .* Message of the day - "))
+      (is (received? s #"372 dan :- expected MOTD content"))
+      (is (received? s #"376 dan :End of MOTD command")))
+    (finally
+      (.delete (io/as-file "etc/motd")))))
+
+(deftest motd-sent-at-authentication-with-a-multi-line-motd-file
+  (try
+    (spit "etc/motd" "expected MOTD content")
+    (with-connection s
+      (transmit s "NICK dan")
+      (transmit s "USER dan 0 * :Dan Larkin")
+      (is (received? s #"375 dan :- .* Message of the day - "))
+      (is (received? s #"372 dan :- line 1"))
+      (is (received? s #"372 dan :- line 2"))
+      (is (received? s #"372 dan :- line 3"))
+      (is (received? s #"372 dan :- this should be a line longer than"))
+      (is (received? s #"372 dan :- 80 characters that gets split up"))
+      (is (received? s #"376 dan :End of MOTD command")))
+    (finally
+      (.delete (io/as-file "etc/motd")))))
 
 (deftest lusers-sent-at-authentication
   (with-connection s
