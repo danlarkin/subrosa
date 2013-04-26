@@ -1,6 +1,6 @@
 (ns subrosa.client
   (:require [carica.core :refer [config]]
-            [clojure.java.io :refer :all]
+            [clojure.java.io :as io]
             [clojure.set :refer [difference]]
             [slingshot.slingshot :refer [throw+]]
             [subrosa.database :as db]
@@ -104,7 +104,7 @@
                           (config :network))))
 
 (defn send-motd [channel]
-  (if (.exists (as-file "etc/motd"))
+  (if (.exists (io/as-file "etc/motd"))
     (send-to-client* channel (slurp "etc/motd"))
     (send-to-client channel 422 ":MOTD File is missing")))
 
